@@ -6,21 +6,19 @@ RUN corepack enable
 FROM base AS build
 WORKDIR /app
 
-COPY pnpm-lock.yaml package.json ./
-COPY server/package.json ./server/
-COPY cli/package.json ./cli/
+COPY package.json pnpm-lock.yaml ./
 
 RUN pnpm install --frozen-lockfile
 
-COPY server/ ./server/
+COPY . .
 
-WORKDIR /app/server
 RUN node ace build
 
 FROM base AS prod-deps
 WORKDIR /app
-COPY --from=build /app/server/build/package.json ./package.json
-COPY --from=build /app/server/build/pnpm-lock.yaml ./pnpm-lock.yaml
+
+COPY --from=build /app/build/package.json ./package.json
+COPY --from=build /app/build/pnpm-lock.yaml ./pnpm-lock.yaml
 RUN pnpm install --prod --frozen-lockfile
 
 FROM base AS production
@@ -29,7 +27,7 @@ WORKDIR /app
 
 USER node
 
-COPY --from=build --chown=node:node /app/server/build ./
+COPY --from=build --chown=node:node /app/build ./
 COPY --from=prod-deps --chown=node:node /app/node_modules ./node_modules
 
 EXPOSE 3333
