@@ -1,0 +1,61 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-gitgone}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+      POSTGRES_DB: ${DB_DATABASE:-gitgone}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-gitgone} -d ${DB_DATABASE:-gitgone}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    image: ghcr.io/project-gitgone/server:sha-cdc8e49
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - TZ=UTC
+      - NODE_ENV=production
+      - PORT=3333
+      - HOST=0.0.0.0
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - APP_KEY=${APP_KEY}
+      - APP_URL=${APP_URL}
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=${DB_USER:-gitgone}
+      - DB_PASSWORD=${DB_PASSWORD:-password}
+      - DB_DATABASE=${DB_DATABASE:-gitgone}
+      - DB_POOL_MIN=${DB_POOL_MIN:-2}
+      - DB_POOL_MAX=${DB_POOL_MAX:-10}
+      - ALLOW_REGISTRATION=${ALLOW_REGISTRATION:-true}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
+      - TRUST_PROXY=true
+      - TOKEN_EXPIRES_IN=${TOKEN_EXPIRES_IN:-30 days}
+      - DB_ALLOW_MIGRATIONS_IN_PRODUCTION=${DB_ALLOW_MIGRATIONS_IN_PRODUCTION:-false}
+    networks:
+      - internal
+      - web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.gitgone.rule=Host(`${DOMAIN:-gitgone.lagache.dev}`)"
+      - "traefik.http.routers.gitgone.entrypoints=websecure"
+      - "traefik.http.routers.gitgone.tls.certresolver=cloudflare"
+      - "traefik.http.services.gitgone.loadbalancer.server.port=3333"
+
+networks:
+  internal:
+  web:
+    external: true
+
+volumes:
+  pgdata:

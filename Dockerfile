@@ -29,6 +29,8 @@ USER node
 
 COPY --from=build --chown=node:node /app/build ./
 COPY --from=prod-deps --chown=node:node /app/node_modules ./node_modules
+COPY --chown=node:node scripts/ ./scripts/
+RUN chmod +x scripts/start.sh
 
 EXPOSE 3333
-CMD ["node", "bin/server.js"]
+CMD ["./scripts/start.sh"]
