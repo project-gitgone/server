@@ -1,0 +1,10 @@
+node_modules
+build
+.git
+.env
+*.log
+docker-compose.yml
+Dockerfile
+.editorconfig
+.gitignore
+eslint.config.js
