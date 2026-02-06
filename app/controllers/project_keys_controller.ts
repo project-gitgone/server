@@ -34,7 +34,7 @@ export default class ProjectKeysController {
         const user = auth.getUserOrFail()
 
         if (!user.encryptedPrivateKey) {
-            return response.notFound('No private key vault found for this user.')
+            return response.notFound({ message: 'No private key vault found for this user.' })
         }
 
         return response.ok({
@@ -50,7 +50,7 @@ export default class ProjectKeysController {
         const project = await Project.findOrFail(params.projectId)
 
         if (await bouncer.with(ProjectPolicy).denies('view', project)) {
-            return response.forbidden('Access denied to this project')
+            return response.forbidden({ message: 'Access denied to this project' })
         }
 
         const keyEntry = await ProjectKey.query()
@@ -59,7 +59,7 @@ export default class ProjectKeysController {
             .first()
 
         if (!keyEntry) {
-            return response.notFound('No project key found for you. Ask the admin to re-invite you or rotate keys.')
+            return response.notFound({ message: 'No project key found for you. Ask the admin to re-invite you or rotate keys.' })
         }
 
         return response.ok({
@@ -72,7 +72,7 @@ export default class ProjectKeysController {
         const project = await Project.findOrFail(params.projectId)
 
         if (await bouncer.with(ProjectPolicy).denies('edit', project)) {
-            return response.forbidden('Access denied')
+            return response.forbidden({ message: 'Access denied' })
         }
 
         await project.load('team')
@@ -101,7 +101,7 @@ export default class ProjectKeysController {
         const project = await Project.findOrFail(params.projectId)
 
         if (await bouncer.with(ProjectPolicy).denies('edit', project)) {
-            return response.forbidden('Access denied')
+            return response.forbidden({ message: 'Access denied' })
         }
 
         const payload = await request.validateUsing(setupProjectKeyValidator)
@@ -120,7 +120,7 @@ export default class ProjectKeysController {
         const project = await Project.findOrFail(params.projectId)
 
         if (await bouncer.with(ProjectPolicy).denies('edit', project)) {
-            return response.forbidden('Access denied')
+            return response.forbidden({ message: 'Access denied' })
         }
 
         const payload = await request.validateUsing(shareProjectKeyValidator)

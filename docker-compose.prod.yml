@@ -17,7 +17,7 @@ services:
       retries: 5
 
   app:
-    image: ghcr.io/project-gitgone/server:sha-cdc8e49
+    image: ghcr.io/project-gitgone/server:latest
     restart: always
     depends_on:
       db:
