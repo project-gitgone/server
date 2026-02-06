@@ -44,9 +44,10 @@ services:
       - DB_ALLOW_MIGRATIONS_IN_PRODUCTION=${DB_ALLOW_MIGRATIONS_IN_PRODUCTION:-false}
     networks:
       - internal
-      - web
+      - traefik_default
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=traefik_default"
       - "traefik.http.routers.gitgone.rule=Host(`${DOMAIN:-gitgone.lagache.dev}`)"
       - "traefik.http.routers.gitgone.entrypoints=websecure"
       - "traefik.http.routers.gitgone.tls.certresolver=cloudflare"
@@ -54,7 +55,7 @@ services:
 
 networks:
   internal:
-  web:
+  traefik_default:
     external: true
 
 volumes:
