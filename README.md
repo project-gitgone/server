@@ -6,7 +6,7 @@
 
 **A secure and modern secret management tool for teams and developers.**
 
-[Documentation](https://docs.gitgone.dev) • [Website](https://gitgone.dev) • [Discord](https://discord.gitgone.dev)
+[Documentation](https://docs.gitgone.org) • [Website](https://gitgone.org) • [Discord](https://discord.gitgone.org)
 
 
 ---
