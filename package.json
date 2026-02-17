@@ -1,7 +1,7 @@
 {
   "name": "@project-gitgone/server",
   "description": "GitGone server",
-  "version": "26.2.5",
+  "version": "26.2.6",
   "private": false,
   "type": "module",
   "license": "MIT",
@@ -58,7 +58,9 @@
     "@adonisjs/core": "^6.20.0",
     "@adonisjs/cors": "^2.2.1",
     "@adonisjs/lucid": "^21.8.2",
+    "@adonisjs/static": "^1.1.1",
     "@vinejs/vine": "^3.0.1",
+    "edge.js": "^6.4.0",
     "luxon": "^3.7.2",
     "nanoid": "^5.1.6",
     "pg": "^8.18.0",

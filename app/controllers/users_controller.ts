@@ -6,11 +6,9 @@ import { createUserValidator, updateUserValidator } from '#validators/user'
 import env from '#start/env'
 
 export default class UsersController {
-
-
   async index({ request, bouncer, response }: HttpContext) {
     if (await bouncer.with(SystemPolicy).denies('manage')) {
-        return response.forbidden('You are not authorized to view users')
+      return response.forbidden('You are not authorized to view users')
     }
 
     const page = request.input('page', 1)
@@ -21,8 +19,7 @@ export default class UsersController {
 
     if (search) {
       query.where((q) => {
-        q.where('email', 'ilike', `%${search}%`)
-          .orWhere('full_name', 'ilike', `%${search}%`)
+        q.where('email', 'ilike', `%${search}%`).orWhere('full_name', 'ilike', `%${search}%`)
       })
     }
 
@@ -43,17 +40,19 @@ export default class UsersController {
 
     const existing = await User.findBy('email', payload.email)
     if (existing) {
-        if (existing.deletedAt) {
-             return response.badRequest('User with this email exists but is deleted. Please restore or contact admin.')
-        }
-        return response.badRequest('Email already in use')
+      if (existing.deletedAt) {
+        return response.badRequest(
+          'User with this email exists but is deleted. Please restore or contact admin.'
+        )
+      }
+      return response.badRequest('Email already in use')
     }
 
     const user = await User.create({
       email: payload.email,
       password: payload.password,
       fullName: payload.fullName,
-      systemRole: isSuperAdmin ? (payload.systemRole || 'USER') : 'USER',
+      systemRole: isSuperAdmin ? payload.systemRole || 'USER' : 'USER',
       publicKey: payload.publicKey,
       encryptedPrivateKey: payload.encryptedPrivateKey,
       keySalt: payload.keySalt,
@@ -64,7 +63,7 @@ export default class UsersController {
   }
 
   async update({ request, params, bouncer, response }: HttpContext) {
-     if (await bouncer.with(SystemPolicy).denies('manage')) {
+    if (await bouncer.with(SystemPolicy).denies('manage')) {
       return response.forbidden('You are not authorized to update users')
     }
 
@@ -72,12 +71,11 @@ export default class UsersController {
 
     const payload = await request.validateUsing(updateUserValidator)
 
-      userToUpdate.merge(payload)
-      await userToUpdate.save()
+    userToUpdate.merge(payload)
+    await userToUpdate.save()
 
-      return response.ok(userToUpdate)
+    return response.ok(userToUpdate)
   }
-
 
   async destroy({ params, bouncer, response, auth }: HttpContext) {
     if (await bouncer.with(SystemPolicy).denies('manage')) {
@@ -87,7 +85,7 @@ export default class UsersController {
     const userToDelete = await User.findOrFail(params.id)
 
     if (userToDelete.id === auth.getUserOrFail().id) {
-        return response.badRequest('You cannot delete your own account.')
+      return response.badRequest('You cannot delete your own account.')
     }
 
     userToDelete.deletedAt = DateTime.now()

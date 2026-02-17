@@ -13,8 +13,6 @@ import {
 } from '#validators/workspace'
 
 export default class WorkspaceController {
-
-
   async createTeam({ request, auth, response }: HttpContext) {
     const user = auth.getUserOrFail()
 
@@ -30,7 +28,6 @@ export default class WorkspaceController {
 
     return response.created(team)
   }
-
 
   async addMember({ request, params, bouncer, response }: HttpContext) {
     const team = await Team.findOrFail(params.id)
@@ -96,28 +93,28 @@ export default class WorkspaceController {
   }
 
   async updateProject({ request, params, bouncer, response }: HttpContext) {
-      const project = await Project.findOrFail(params.id)
+    const project = await Project.findOrFail(params.id)
 
-      if (await bouncer.with(ProjectPolicy).denies('edit', project)) {
-          return response.forbidden({ message: 'Access denied' })
-      }
+    if (await bouncer.with(ProjectPolicy).denies('edit', project)) {
+      return response.forbidden({ message: 'Access denied' })
+    }
 
-      const payload = await request.validateUsing(updateProjectValidator)
+    const payload = await request.validateUsing(updateProjectValidator)
 
-      project.merge(payload)
-      await project.save()
+    project.merge(payload)
+    await project.save()
 
-      return response.ok(project)
+    return response.ok(project)
   }
 
   async showProject({ params, bouncer, response }: HttpContext) {
-      const project = await Project.findOrFail(params.id)
+    const project = await Project.findOrFail(params.id)
 
-      if (await bouncer.with(ProjectPolicy).denies('view', project)) {
-          return response.forbidden({ message: 'Access denied' })
-      }
+    if (await bouncer.with(ProjectPolicy).denies('view', project)) {
+      return response.forbidden({ message: 'Access denied' })
+    }
 
-      return response.ok(project)
+    return response.ok(project)
   }
 
   async listProjects({ auth, response }: HttpContext) {
@@ -130,10 +127,7 @@ export default class WorkspaceController {
 
     const projects = await Project.query()
       .whereIn('team_id', (subquery) => {
-        subquery
-          .select('team_id')
-          .from('team_members')
-          .where('user_id', user.id)
+        subquery.select('team_id').from('team_members').where('user_id', user.id)
       })
       .preload('team')
 

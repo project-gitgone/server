@@ -8,7 +8,11 @@ export default class ProjectPolicy extends BasePolicy {
     if (user.systemRole === 'SUPERADMIN') return true
 
     await project.load('team')
-    const membership = await project.team.related('members').query().where('user_id', user.id).first()
+    const membership = await project.team
+      .related('members')
+      .query()
+      .where('user_id', user.id)
+      .first()
     return !!membership
   }
 
@@ -16,7 +20,24 @@ export default class ProjectPolicy extends BasePolicy {
     if (user.systemRole === 'SUPERADMIN') return true
 
     await project.load('team')
-    const membership = await project.team.related('members').query().where('user_id', user.id).first()
+    const membership = await project.team
+      .related('members')
+      .query()
+      .where('user_id', user.id)
+      .first()
+    return !!membership
+  }
+
+  async manageTokens(user: User, project: Project): Promise<AuthorizerResponse> {
+    if (user.systemRole === 'SUPERADMIN') return true
+
+    await project.load('team')
+    const membership = await project.team
+      .related('members')
+      .query()
+      .where('user_id', user.id)
+      .andWhere('role', 'OWNER')
+      .first()
     return !!membership
   }
 }

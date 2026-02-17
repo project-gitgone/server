@@ -4,7 +4,6 @@ import { DateTime } from 'luxon'
 import { initAdminValidator } from '#validators/server'
 
 export default class ServerController {
-
   async health({ response }: HttpContext) {
     const userCount = await User.query().count('* as total').first()
     const initialized = userCount?.$extras.total > 0

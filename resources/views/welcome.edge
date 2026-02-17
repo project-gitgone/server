@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>GitGone • {{ instanceName }}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap');
+            
+            :root {
+            --bg: #000000;
+            --fg: #ffffff;
+            --muted: #888888;
+            --border: #222222;
+            --accent: #10b981;
+            }
+            
+            * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            }
+            
+            body {
+            font-family: 'Geist', sans-serif;
+            background-color: var(--bg);
+            color: var(--fg);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 2rem;
+            -webkit-font-smoothing: antialiased;
+            }
+            
+            main {
+            max-width: 480px;
+            width: 100%;
+            text-align: left;
+            }
+            
+            .header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 2rem;
+            }
+            
+            h1 {
+            font-size: 1.125rem;
+            font-weight: 500;
+            letter-spacing: -0.02em;
+            }
+            
+            .status-box {
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            }
+            
+            .status-title {
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            }
+            
+            .status-val {
+            font-size: 0.9375rem;
+            font-weight: 400;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            }
+            
+            .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            }
+            
+            .dot-ok { background: var(--accent); }
+            .dot-warn { background: #f59e0b; }
+            
+            .code-block {
+            background: #0a0a0a;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: ui-monospace, monospace;
+            font-size: 0.8125rem;
+            color: var(--accent);
+            margin-top: 1.25rem;
+            border: 1px solid #1a1a1a;
+            }
+            
+            .grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            background: var(--border);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            }
+            
+            .item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            background: var(--bg);
+            text-decoration: none;
+            color: var(--fg);
+            font-size: 0.875rem;
+            transition: background 0.15s;
+            }
+            
+            .item:hover {
+            background: #050505;
+            }
+            
+            .item span {
+            color: var(--muted);
+            font-size: 0.75rem;
+            }
+            
+            .footer {
+            margin-top: 3rem;
+            font-size: 0.75rem;
+            color: var(--muted);
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 480px;
+            opacity: 0.5;
+            }
+            
+            @media (max-width: 480px) {
+            body { padding: 1.5rem; }
+            }
+          </style>
+  </head>
+  <body>
+    
+    <main>
+      <div class="header">
+        <img src="/assets/logo.svg" alt="" style="width: 24px; height: 24px;">
+          <h1>GitGone</h1>
+      </div>
+      <div class="status-box">
+      <div class="status-title">Instance Status</div>
+        <div class="status-val">
+          @if(!hasAdmin)
+            <span class="dot dot-warn"></span>
+            <span>Pending Configuration</span>
+              @else
+            <span class="dot dot-ok"></span>
+            <span>System Operational</span>
+          @endif
+        </div>
+        
+        @if(!hasAdmin)
+          <p style="font-size: 0.8125rem; color: var(--muted); margin-top: 1rem;">
+            Initialize the admin account using the CLI:
+          </p>
+      <div class="code-block">gitgone admin setup</div>
+        @endif
+      </div>
+      
+      <div class="grid">
+        <a href="https://docs.gitgone.org" class="item">
+          Documentation
+        </a>
+        <a href="/healthcheck" class="item">
+          Health Check
+        </a>
+        <a href="https://github.com/project-gitgone" class="item">
+          Repository
+        </a>
+      </div>
+    </main>
+    
+    <footer class="footer">
+            <span>{{ instanceName }}</span>
+    </footer>
+    
+  </body>
+</html>
