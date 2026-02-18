@@ -34,7 +34,7 @@ export default class ProjectTokensController {
 
     const token = await ProjectToken.create({
       name: payload.name,
-      token: payload.tokenSecretHash,
+      token: await hash.make(payload.tokenSecretHash),
       projectId: project.id,
       environment: payload.environment,
       encryptedProjectKey: payload.encryptedProjectKey,

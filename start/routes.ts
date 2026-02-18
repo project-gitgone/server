@@ -74,5 +74,4 @@ router
   })
   .use(middleware.auth())
 
-router.get('/api/v1/get-env', [ProjectTokensController, 'getEnv'])
-router.get('/api/v1/secrets/token', [ProjectTokensController, 'getEnv']) // Alias
+router.get('/api/secrets/token', [ProjectTokensController, 'getEnv'])
