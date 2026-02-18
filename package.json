@@ -1,7 +1,7 @@
 {
   "name": "@project-gitgone/server",
   "description": "GitGone server",
-  "version": "26.2.6",
+  "version": "26.2.7",
   "private": false,
   "type": "module",
   "license": "MIT",
