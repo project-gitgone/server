@@ -1,9 +1,8 @@
-
 import { test } from '@japa/runner'
 
 test.group('Hello world', () => {
   test('get home page', async ({ client }) => {
-    const response = await client.get('/')
+    const response = await client.get('/').accept('json')
     response.assertStatus(200)
     response.assertBodyContains({ status: 'ok' })
   })
