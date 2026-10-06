@@ -1,4 +1,5 @@
 import type { HttpContext } from '@adonisjs/core/http'
+import logger from '@adonisjs/core/services/logger'
 import { GitGoneCloudDriver } from '#auth/gitgone_cloud_driver'
 import User from '#models/user'
 import { audit } from '#services/audit'
@@ -10,6 +11,21 @@ import {
   redeemLoginCode,
 } from '#services/cloud_login'
 import { cloudExchangeValidator, cloudLoginValidator } from '#validators/auth'
+
+const NETWORK_ERRORS = new Set([
+  'ECONNREFUSED',
+  'ENOTFOUND',
+  'EAI_AGAIN',
+  'ETIMEDOUT',
+  'ECONNRESET',
+])
+
+const isUnreachable = (error: unknown) => {
+  const code =
+    (error as { code?: string; cause?: { code?: string } })?.cause?.code ??
+    (error as { code?: string })?.code
+  return !!code && NETWORK_ERRORS.has(code)
+}
 
 const CLI_REQUEST_COOKIE = 'gitgone_cli_login'
 
@@ -64,11 +80,17 @@ export default class CloudLoginController {
       })
       return response.redirect(cliCallback(cli, { code }))
     } catch (error) {
+      logger.error({ err: error }, 'Cloud login failed')
       await audit({ auth, request }, 'auth.login.failed', {
         actor: { type: 'user', id: 'unknown', label: 'cloud' },
         details: { via: 'cloud' },
       })
-      const message = error instanceof CloudLoginDeniedError ? error.message : 'Login failed'
+      const message =
+        error instanceof CloudLoginDeniedError
+          ? error.message
+          : isUnreachable(error)
+            ? 'GitGone Cloud is unreachable from this instance'
+            : 'Login failed'
       return response.redirect(
         cliCallback(cli, { error: 'access_denied', error_description: message })
       )

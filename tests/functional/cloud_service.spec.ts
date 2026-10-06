@@ -6,6 +6,7 @@ import Environment from '#models/environment'
 import EnvironmentKey from '#models/environment_key'
 import AuditEvent from '#models/audit_event'
 import User from '#models/user'
+import Role from '#models/role'
 import UserIdentity from '#models/user_identity'
 import { createUser, grantRole } from '#tests/helpers/rbac'
 import { disableCloud, enableCloud, signCloudToken, stopCloud } from '#tests/helpers/cloud'
@@ -177,5 +178,75 @@ test.group('Cloud membership sync', (group) => {
       .header('Authorization', `Bearer ${signCloudToken({ sub: 'cloud_console' })}`)
       .json(body)
     userToken.assertStatus(403)
+  })
+
+  test('the cloud can wipe the instance, keeping the default roles', async ({ client, assert }) => {
+    await enableCloud()
+    const team = await Team.create({ name: 'Wiped team' })
+    await Project.create({ name: 'Wiped project', teamId: team.id })
+    const user = await createUser('wiped@example.com')
+    await grantRole(user, 'owner')
+    await Role.create({ name: 'Custom wiped', scope: 'workspace', isSystem: false, grants: [] })
+
+    const refused = await client
+      .post('/api/manage/v1/service/instance/reset')
+      .header('Authorization', service())
+    refused.assertStatus(403)
+
+    const response = await client
+      .post('/api/manage/v1/service/instance/reset')
+      .header('Authorization', service('instance.reset'))
+    response.assertStatus(200)
+    assert.lengthOf(await User.all(), 0)
+    assert.lengthOf(await Team.all(), 0)
+    assert.lengthOf(await Role.query().where('is_system', false), 0)
+    const systemRoles = await Role.query().where('is_system', true)
+    assert.isAbove(systemRoles.length, 0)
+    assert.exists(await AuditEvent.query().where('action', 'instance.reset').first())
+  })
+
+  test('the cloud can reset every access without losing data', async ({ client, assert }) => {
+    await enableCloud()
+    const team = await Team.create({ name: 'Access team' })
+    const project = await Project.create({ name: 'Access project', teamId: team.id })
+    const user = await createUser('access-reset@example.com')
+    await User.accessTokens.create(user)
+    const qa = await Environment.create({
+      projectId: project.id,
+      name: 'qa',
+      protected: false,
+      keyVersion: 1,
+    })
+
+    const response = await client
+      .post('/api/manage/v1/service/instance/access/reset')
+      .header('Authorization', service('instance.reset'))
+    response.assertStatus(200)
+    assert.lengthOf(await User.accessTokens.all(user), 0)
+    await qa.refresh()
+    assert.isTrue(qa.rotationRequired)
+    assert.exists(await User.find(user.id))
+    assert.exists(await Project.find(project.id))
+  })
+
+  test('revoking a cloud authorization cuts the CLI sessions of that member', async ({
+    client,
+    assert,
+  }) => {
+    await enableCloud()
+    const user = await createUser('revoked-sessions@example.com')
+    await UserIdentity.create({
+      provider: 'gitgone-cloud',
+      subject: 'cloud_revoked',
+      userId: user.id,
+    })
+    await User.accessTokens.create(user)
+
+    const response = await client
+      .post('/api/manage/v1/service/identities/cloud_revoked/sessions/revoke')
+      .header('Authorization', service())
+    response.assertStatus(200)
+    assert.lengthOf(await User.accessTokens.all(user), 0)
+    assert.exists(await User.find(user.id))
   })
 })
