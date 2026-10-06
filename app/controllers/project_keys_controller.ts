@@ -1,11 +1,12 @@
+import { audit } from '#services/audit'
 import type { HttpContext } from '@adonisjs/core/http'
-import User from '#models/user'
 import Project from '#models/project'
-import ProjectKey from '#models/project_key'
-import ProjectPolicy from '#policies/project_policy'
+import User, { V2_KEY_ENCRYPTION_ALGO } from '#models/user'
+import { projectKeyring, saveUserKey } from '#services/keyring'
+import { permit } from '#abilities/main'
+import { ANY_ENVIRONMENT } from '#services/rbac/resolve'
 import {
     setupProjectKeyValidator,
-    shareProjectKeyValidator,
     uploadPublicKeyValidator,
 } from '#validators/key'
 
@@ -13,18 +14,31 @@ export default class ProjectKeysController {
 
     async uploadPublicKey({ request, auth, response }: HttpContext) {
         const user = auth.getUserOrFail()
-
         const payload = await request.validateUsing(uploadPublicKeyValidator)
 
-        user.publicKey = payload.publicKey
+        const keys = payload.encryptedPrivateKey && payload.kdf
+            ? {
+                encrypted_private_key: payload.encryptedPrivateKey,
+                key_salt: null,
+                key_encryption_algo: V2_KEY_ENCRYPTION_ALGO,
+                crypto_version: 2,
+                kdf_params: JSON.stringify(payload.kdf),
+            }
+            : payload.encryptedPrivateKey
+                ? {
+                    encrypted_private_key: payload.encryptedPrivateKey,
+                    key_salt: payload.keySalt || null,
+                    key_encryption_algo: payload.keyEncryptionAlgo || 'aes-256-gcm',
+                }
+                : {}
 
-        if (payload.encryptedPrivateKey) {
-            user.encryptedPrivateKey = payload.encryptedPrivateKey
-            user.keySalt = payload.keySalt || null
-            user.keyEncryptionAlgo = payload.keyEncryptionAlgo || 'aes-256-gcm'
+        const updated = await User.query()
+            .where('id', user.id)
+            .whereNull('public_key')
+            .update({ public_key: payload.publicKey, ...keys })
+        if (!Number(updated[0] ?? 0)) {
+            return response.conflict({ message: 'Keys are already set for this account' })
         }
-
-        await user.save()
 
         return response.ok({ message: 'Keys updated successfully' })
     }
@@ -40,98 +54,26 @@ export default class ProjectKeysController {
         return response.ok({
             encryptedPrivateKey: user.encryptedPrivateKey,
             keySalt: user.keySalt,
-            keyEncryptionAlgo: user.keyEncryptionAlgo
+            keyEncryptionAlgo: user.keyEncryptionAlgo,
+            cryptoVersion: user.cryptoVersion,
+            kdfParams: user.kdfParams,
         })
     }
 
-
-    async getProjectKey({ params, auth, bouncer, response }: HttpContext) {
-        const user = auth.getUserOrFail()
-        const project = await Project.findOrFail(params.projectId)
-
-        if (await bouncer.with(ProjectPolicy).denies('view', project)) {
-            return response.forbidden({ message: 'Access denied to this project' })
-        }
-
-        const keyEntry = await ProjectKey.query()
-            .where('project_id', project.id)
-            .andWhere('user_id', user.id)
-            .first()
-
-        if (!keyEntry) {
-            return response.notFound({ message: 'No project key found for you. Ask the admin to re-invite you or rotate keys.' })
-        }
-
-        return response.ok({
-            encryptedKey: keyEntry.encryptedKey
-        })
-    }
-
-
-    async pending({ params, bouncer, response }: HttpContext) {
-        const project = await Project.findOrFail(params.projectId)
-
-        if (await bouncer.with(ProjectPolicy).denies('edit', project)) {
-            return response.forbidden({ message: 'Access denied' })
-        }
-
-        await project.load('team')
-
-        const pendingUsers = await User.query()
-            .whereNotNull('public_key')
-            .whereIn('id', (subQuery) => {
-                subQuery
-                    .select('user_id')
-                    .from('team_members')
-                    .where('team_id', project.teamId)
-            })
-            .whereNotIn('id', (subQuery) => {
-                subQuery
-                    .select('user_id')
-                    .from('project_keys')
-                    .where('project_id', project.id)
-            })
-            .select('id', 'email', 'full_name', 'public_key')
-
-        return response.ok(pendingUsers)
-    }
 
     async setupProjectKey({ request, params, auth, bouncer, response }: HttpContext) {
         const user = auth.getUserOrFail()
         const project = await Project.findOrFail(params.projectId)
 
-        if (await bouncer.with(ProjectPolicy).denies('edit', project)) {
+        if (await bouncer.denies(permit, 'env.read', { project, environment: ANY_ENVIRONMENT })) {
             return response.forbidden({ message: 'Access denied' })
         }
 
         const payload = await request.validateUsing(setupProjectKeyValidator)
 
-        await ProjectKey.updateOrCreate({
-            projectId: project.id,
-            userId: user.id
-        }, {
-            encryptedKey: payload.encryptedKey
-        })
+        await saveUserKey(projectKeyring(project), user.id, payload.encryptedKey)
 
+        await audit({ auth, request }, 'keys.setup', { projectId: project.id })
         return response.ok({ message: 'Project Key set for you' })
-    }
-
-    async shareProjectKey({ request, params, bouncer, response }: HttpContext) {
-        const project = await Project.findOrFail(params.projectId)
-
-        if (await bouncer.with(ProjectPolicy).denies('edit', project)) {
-            return response.forbidden({ message: 'Access denied' })
-        }
-
-        const payload = await request.validateUsing(shareProjectKeyValidator)
-
-        await ProjectKey.updateOrCreate({
-            projectId: project.id,
-            userId: payload.targetUserId
-        }, {
-            encryptedKey: payload.encryptedKey
-        })
-
-        return response.ok({ message: 'Key shared successfully' })
     }
 }

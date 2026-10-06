@@ -1,16 +1,19 @@
 import { test } from '@japa/runner'
 import User from '#models/user'
+import { DateTime } from 'luxon'
+
+const AUTH_KEY = 'k'.repeat(43)
+const KDF = { algo: 'scrypt', salt: 'c2FsdHNhbHRzYWx0c2FsdA==', N: 131072, r: 8, p: 1 }
 
 test.group('Auth', () => {
   test('initialize admin successfully', async ({ client, assert }) => {
     const payload = {
       email: 'admin@example.com',
-      password: 'password123',
       fullName: 'Super Admin',
+      authKey: AUTH_KEY,
+      kdf: KDF,
       publicKey: 'abc',
       encryptedPrivateKey: 'def',
-      keySalt: 'salt',
-      keyEncryptionAlgo: 'aes-256-gcm',
     }
 
     const response = await client.post('/api/setup/init-admin').json(payload)
@@ -25,7 +28,14 @@ test.group('Auth', () => {
     })
 
     const user = await User.findByOrFail('email', 'admin@example.com')
-    assert.equal(user.email, 'admin@example.com')
+    assert.equal(user.cryptoVersion, 2)
+    assert.deepEqual(user.kdfParams, KDF)
+
+    const login = await client.post('/api/auth/login').json({
+      email: 'admin@example.com',
+      authKey: AUTH_KEY,
+    })
+    login.assertStatus(200)
   })
 
   test('cannot initialize admin twice', async ({ client }) => {
@@ -37,17 +47,15 @@ test.group('Auth', () => {
       encryptedPrivateKey: 'def',
       keySalt: 'salt',
       keyEncryptionAlgo: 'aes-256-gcm',
-      systemRole: 'SUPERADMIN',
     })
 
     const payload = {
       email: 'admin2@example.com',
-      password: 'password123',
       fullName: 'Admin 2',
+      authKey: AUTH_KEY,
+      kdf: KDF,
       publicKey: 'abc',
       encryptedPrivateKey: 'def',
-      keySalt: 'salt',
-      keyEncryptionAlgo: 'aes-256-gcm',
     }
 
     const response = await client.post('/api/setup/init-admin').json(payload)
@@ -79,5 +87,34 @@ test.group('Auth', () => {
       }
     })
     assert.properties(response.body(), ['token', 'user'])
+  })
+
+  test('deleted user cannot login', async ({ client }) => {
+    await User.create({
+      email: 'deleted@example.com',
+      password: 'password123',
+      fullName: 'Deleted User',
+      deletedAt: DateTime.now(),
+    })
+
+    const response = await client.post('/api/auth/login').json({
+      email: 'deleted@example.com',
+      password: 'password123',
+    })
+
+    response.assertStatus(401)
+  })
+
+  test('deleted user token is rejected', async ({ client }) => {
+    const user = await User.create({
+      email: 'deleted_token@example.com',
+      password: 'password123',
+      fullName: 'Deleted Token User',
+      deletedAt: DateTime.now(),
+    })
+
+    const response = await client.get('/api/auth/me').loginAs(user)
+
+    response.assertStatus(401)
   })
 })

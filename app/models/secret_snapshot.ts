@@ -28,6 +28,12 @@ export default class SecretSnapshot extends BaseModel {
   declare authTag: string
 
   @column()
+  declare cryptoVersion: number
+
+  @column()
+  declare keyVersion: number
+
+  @column()
   declare createdBy: string
 
   @column.dateTime({ autoCreate: true })
@@ -45,5 +51,7 @@ export default class SecretSnapshot extends BaseModel {
   @beforeCreate()
   static assignId(snapshot: SecretSnapshot) {
     snapshot.id = `snap_${nanoid(10)}`
+    snapshot.cryptoVersion ??= 1
+    snapshot.keyVersion ??= 1
   }
 }

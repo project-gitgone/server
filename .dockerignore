@@ -8,3 +8,5 @@ Dockerfile
 .editorconfig
 .gitignore
 eslint.config.js
+tests
+bin/test.ts

@@ -1,7 +1,7 @@
 {
   "name": "@project-gitgone/server",
   "description": "GitGone server",
-  "version": "26.2.8",
+  "version": "26.10.6",
   "private": false,
   "type": "module",
   "license": "MIT",
@@ -31,7 +31,8 @@
     "#database/*": "./database/*.js",
     "#start/*": "./start/*.js",
     "#tests/*": "./tests/*.js",
-    "#config/*": "./config/*.js"
+    "#config/*": "./config/*.js",
+    "#auth/*": "./app/auth/*.js"
   },
   "devDependencies": {
     "@adonisjs/assembler": "^7.8.2",
@@ -53,6 +54,7 @@
     "typescript": "~5.8.3"
   },
   "dependencies": {
+    "@adonisjs/ally": "5.1.2",
     "@adonisjs/auth": "^9.6.0",
     "@adonisjs/bouncer": "^3.1.6",
     "@adonisjs/core": "^6.20.0",

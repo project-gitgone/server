@@ -12,8 +12,11 @@ export default class ProjectToken extends BaseModel {
   @column()
   declare name: string
 
-  @column()
+  @column({ serializeAs: null })
   declare token: string
+
+  @column()
+  declare cryptoVersion: number
 
   @column()
   declare projectId: string
@@ -21,7 +24,7 @@ export default class ProjectToken extends BaseModel {
   @column()
   declare environment: string
 
-  @column()
+  @column({ serializeAs: null })
   declare encryptedProjectKey: string
 
   @column()

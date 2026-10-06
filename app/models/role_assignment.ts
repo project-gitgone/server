@@ -1,11 +1,12 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column, beforeCreate, belongsTo } from '@adonisjs/lucid/orm'
+import { BaseModel, beforeCreate, belongsTo, column } from '@adonisjs/lucid/orm'
 import { nanoid } from 'nanoid'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 import User from '#models/user'
-import Team from '#models/team'
+import Role from '#models/role'
+import type { ScopeType } from '#services/rbac/resolve'
 
-export default class TeamMember extends BaseModel {
+export default class RoleAssignment extends BaseModel {
   @column({ isPrimary: true })
   declare id: string
 
@@ -13,10 +14,13 @@ export default class TeamMember extends BaseModel {
   declare userId: string
 
   @column()
-  declare teamId: string
+  declare roleId: string
 
   @column()
-  declare role: 'OWNER' | 'MEMBER'
+  declare scopeType: ScopeType
+
+  @column()
+  declare scopeId: string | null
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -27,11 +31,11 @@ export default class TeamMember extends BaseModel {
   @belongsTo(() => User)
   declare user: BelongsTo<typeof User>
 
-  @belongsTo(() => Team)
-  declare team: BelongsTo<typeof Team>
+  @belongsTo(() => Role)
+  declare role: BelongsTo<typeof Role>
 
   @beforeCreate()
-  static assignId(member: TeamMember) {
-    member.id = `mem_${nanoid(10)}`
+  static assignId(assignment: RoleAssignment) {
+    assignment.id = `ra_${nanoid(12)}`
   }
 }

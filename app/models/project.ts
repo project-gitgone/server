@@ -4,6 +4,7 @@ import { nanoid } from 'nanoid'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import Team from '#models/team'
 import SecretSnapshot from '#models/secret_snapshot'
+import RoleAssignment from '#models/role_assignment'
 
 export default class Project extends BaseModel {
   @column({ isPrimary: true })
@@ -18,6 +19,9 @@ export default class Project extends BaseModel {
   @column()
   declare disallowPull: boolean
 
+  @column()
+  declare keyVersion: number
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 
@@ -30,8 +34,15 @@ export default class Project extends BaseModel {
   @hasMany(() => SecretSnapshot)
   declare snapshots: HasMany<typeof SecretSnapshot>
 
+  @hasMany(() => RoleAssignment, {
+    foreignKey: 'scopeId',
+    onQuery: (query) => query.where('scope_type', 'project'),
+  })
+  declare members: HasMany<typeof RoleAssignment>
+
   @beforeCreate()
   static assignId(project: Project) {
     project.id = `proj_${nanoid(10)}`
+    project.keyVersion ??= 1
   }
 }

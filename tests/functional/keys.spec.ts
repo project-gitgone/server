@@ -1,7 +1,9 @@
 import { test } from '@japa/runner'
+import { grantRole } from '#tests/helpers/rbac'
 import User from '#models/user'
 import Team from '#models/team'
 import Project from '#models/project'
+import ProjectKey from '#models/project_key'
 
 test.group('Project Keys', () => {
   test('upload public key successfully', async ({ client, assert }) => {
@@ -65,10 +67,8 @@ test.group('Project Keys', () => {
     })
 
     const team = await Team.create({ name: 'Key Sharing Team' })
-    await team.related('members').createMany([
-      { userId: owner.id, role: 'OWNER' },
-      { userId: otherUser.id, role: 'MEMBER' },
-    ])
+    await grantRole(owner, 'maintainer', { team })
+    await grantRole(otherUser, 'developer', { team })
 
     const project = await Project.create({
       name: 'Key Project',
@@ -118,7 +118,7 @@ test.group('Project Keys', () => {
     })
 
     const team = await Team.create({ name: 'No Key Team' })
-    await team.related('members').create({ userId: user.id, role: 'MEMBER' })
+    await grantRole(user, 'developer', { team })
 
     const project = await Project.create({
       name: 'No Key Project',
@@ -130,6 +130,70 @@ test.group('Project Keys', () => {
       .loginAs(user)
 
     response.assertStatus(404)
-    response.assertBodyContains({ message: 'No project key found for you. Ask the admin to re-invite you or rotate keys.' })
+    response.assertBodyContains({ message: 'The key has not been shared with you yet. Ask a maintainer to run "gitgone keys share".' })
+  })
+
+  test('cannot overwrite existing public key', async ({ client, assert }) => {
+    const user = await User.create({
+      email: 'existing_key@example.com',
+      password: 'password123',
+      fullName: 'Existing Key User',
+      publicKey: 'original_pub',
+      encryptedPrivateKey: 'original_vault',
+    })
+
+    const response = await client
+      .post('/api/keys/upload-public-key')
+      .loginAs(user)
+      .json({
+        publicKey: 'attacker_pub',
+        encryptedPrivateKey: 'attacker_vault',
+      })
+
+    response.assertStatus(409)
+
+    await user.refresh()
+    assert.equal(user.publicKey, 'original_pub')
+    assert.equal(user.encryptedPrivateKey, 'original_vault')
+  })
+
+  test('cannot share project key with a user outside the team', async ({ client, assert }) => {
+    const owner = await User.create({
+      email: 'share_owner@example.com',
+      password: 'password123',
+      fullName: 'Share Owner',
+      publicKey: 'owner_pub',
+    })
+
+    const outsider = await User.create({
+      email: 'outsider@example.com',
+      password: 'password123',
+      fullName: 'Outsider',
+      publicKey: 'outsider_pub',
+    })
+
+    const team = await Team.create({ name: 'Closed Team' })
+    await grantRole(owner, 'maintainer', { team })
+
+    const project = await Project.create({
+      name: 'Closed Project',
+      teamId: team.id,
+    })
+
+    const response = await client
+      .post(`/api/keys/${project.id}/share`)
+      .loginAs(owner)
+      .json({
+        targetUserId: outsider.id,
+        encryptedKey: 'outsider_encrypted_project_key',
+      })
+
+    response.assertStatus(422)
+
+    const keyEntry = await ProjectKey.query()
+      .where('project_id', project.id)
+      .andWhere('user_id', outsider.id)
+      .first()
+    assert.isNull(keyEntry)
   })
 })

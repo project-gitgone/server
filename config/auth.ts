@@ -1,6 +1,8 @@
 import { defineConfig } from '@adonisjs/auth'
 import { tokensGuard, tokensUserProvider } from '@adonisjs/auth/access_tokens'
 import type { InferAuthenticators, InferAuthEvents, Authenticators } from '@adonisjs/auth/types'
+import type { HttpContext } from '@adonisjs/core/http'
+import { CloudGuard } from '#auth/cloud_guard'
 
 const authConfig = defineConfig({
   default: 'api',
@@ -10,17 +12,13 @@ const authConfig = defineConfig({
         tokens: 'accessTokens',
         model: () => import('#models/user')
       }),
-      // expiresIn: env.get('TOKEN_EXPIRES_IN', '30 days'),
     }),
+    cloud: (ctx: HttpContext) => new CloudGuard(ctx),
   },
 })
 
 export default authConfig
 
-/**
- * Inferring types from the configured auth
- * guards.
- */
 declare module '@adonisjs/auth/types' {
   export interface Authenticators extends InferAuthenticators<typeof authConfig> {}
 }

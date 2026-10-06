@@ -1,5 +1,6 @@
 
 import { test } from '@japa/runner'
+import { grantRole } from '#tests/helpers/rbac'
 import User from '#models/user'
 import Team from '#models/team'
 import Project from '#models/project'
@@ -17,10 +18,7 @@ test.group('Secrets', () => {
     })
 
     const team = await Team.create({ name: 'Secret Team' })
-    await team.related('members').create({
-      userId: user.id,
-      role: 'OWNER',
-    })
+    await grantRole(user, 'maintainer', { team })
 
     const project = await Project.create({
       name: 'Secret Project',
@@ -60,10 +58,7 @@ test.group('Secrets', () => {
     })
 
     const team = await Team.create({ name: 'Reader Team' })
-    await team.related('members').create({
-      userId: user.id,
-      role: 'MEMBER',
-    })
+    await grantRole(user, 'developer', { team })
 
     const project = await Project.create({
       name: 'Reader Project',

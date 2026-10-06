@@ -7,7 +7,7 @@ export default class extends BaseSchema {
     this.schema.createTable(this.tableName, (table) => {
       table.string('id').primary()
       table.string('project_id').notNullable().references('id').inTable('projects').onDelete('CASCADE')
-      table.string('environment').notNullable() // 'development', 'staging', 'production'
+      table.string('environment').notNullable()
       table.integer('version').notNullable()
       
       table.text('ciphertext').notNullable()
@@ -19,7 +19,6 @@ export default class extends BaseSchema {
       table.timestamp('created_at').notNullable()
       table.timestamp('updated_at').nullable()
 
-      // Unique constraint for version per project+environment
       table.unique(['project_id', 'environment', 'version'])
     })
   }

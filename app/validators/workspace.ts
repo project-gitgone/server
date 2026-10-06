@@ -9,6 +9,7 @@ export const createTeamValidator = vine.compile(
 export const addMemberValidator = vine.compile(
   vine.object({
     email: vine.string().email(),
+    roleId: vine.string().optional(),
     role: vine.enum(['OWNER', 'MEMBER']).optional(),
   })
 )

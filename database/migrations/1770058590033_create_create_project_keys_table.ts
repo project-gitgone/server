@@ -9,7 +9,6 @@ export default class extends BaseSchema {
       table.string('project_id').notNullable().references('id').inTable('projects').onDelete('CASCADE')
       table.string('user_id').notNullable().references('id').inTable('users').onDelete('CASCADE')
       
-      // The Project Key encrypted with the User's Public Key
       table.text('encrypted_key').notNullable()
       
       table.timestamp('created_at').notNullable()

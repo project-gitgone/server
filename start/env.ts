@@ -1,14 +1,3 @@
-/*
-|--------------------------------------------------------------------------
-| Environment variables service
-|--------------------------------------------------------------------------
-|
-| The `Env.create` method creates an instance of the Env service. The
-| service validates the environment variables and also cast values
-| to JavaScript data types.
-|
-*/
-
 import { Env } from '@adonisjs/core/env'
 
 export default await Env.create(new URL('../', import.meta.url), {
@@ -33,5 +22,13 @@ export default await Env.create(new URL('../', import.meta.url), {
   TRUST_PROXY: Env.schema.boolean.optional(),
   
   TOKEN_EXPIRES_IN: Env.schema.string.optional(),
+  ALLOW_LEGACY_TOKENS: Env.schema.boolean.optional(),
+  ALLOW_LEGACY_CLIENTS: Env.schema.boolean.optional(),
+  AUDIT_RETENTION_DAYS: Env.schema.number.optional(),
+  CLOUD_ISSUER: Env.schema.string.optional(),
+  CLOUD_JWKS_URL: Env.schema.string.optional(),
+  CLOUD_INSTANCE_ID: Env.schema.string.optional(),
+  CLOUD_CLIENT_ID: Env.schema.string.optional(),
+  CLOUD_CLIENT_SECRET: Env.schema.string.optional(),
   DB_ALLOW_MIGRATIONS_IN_PRODUCTION: Env.schema.boolean.optional(),
 })

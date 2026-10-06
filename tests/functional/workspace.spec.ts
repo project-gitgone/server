@@ -1,6 +1,8 @@
 import { test } from '@japa/runner'
 import User from '#models/user'
 import Team from '#models/team'
+import RoleAssignment from '#models/role_assignment'
+import { grantRole } from '#tests/helpers/rbac'
 
 test.group('Workspace', () => {
   test('create a team successfully', async ({ client, assert }) => {
@@ -14,6 +16,8 @@ test.group('Workspace', () => {
       keyEncryptionAlgo: 'aes-256-gcm',
     })
 
+    await grantRole(user, 'member')
+
     const response = await client
       .post('/api/teams')
       .loginAs(user)
@@ -25,10 +29,12 @@ test.group('Workspace', () => {
     const team = await Team.findByOrFail('name', 'My New Team')
     assert.equal(team.name, 'My New Team')
 
-    await team.load('members')
-    const member = team.members.find((m) => m.userId === user.id)
-    assert.exists(member)
-    assert.equal(member!.role, 'OWNER')
+    const member = await RoleAssignment.query()
+      .where('scope_type', 'team')
+      .where('scope_id', team.id)
+      .where('user_id', user.id)
+      .firstOrFail()
+    assert.equal(member.roleId, 'role_maintainer')
   })
 
   test('create a project in a team', async ({ client }) => {
@@ -43,10 +49,7 @@ test.group('Workspace', () => {
     })
 
     const team = await Team.create({ name: 'Team for Project' })
-    await team.related('members').create({
-      userId: user.id,
-      role: 'OWNER',
-    })
+    await grantRole(user, 'maintainer', { team })
 
     const response = await client
       .post(`/api/teams/${team.id}/projects`)

@@ -14,7 +14,10 @@ export default class AuthMiddleware {
       guards?: (keyof Authenticators)[]
     } = {}
   ) {
-    await ctx.auth.authenticateUsing(options.guards, { loginRoute: this.redirectTo })
+    const user = await ctx.auth.authenticateUsing(options.guards, { loginRoute: this.redirectTo })
+    if (user.deletedAt) {
+      return ctx.response.unauthorized({ message: 'Account has been deleted' })
+    }
     return next()
   }
 }

@@ -5,13 +5,10 @@ export default class extends BaseSchema {
 
   async up() {
     this.schema.alterTable(this.tableName, (table) => {
-      // Stocke la clé privée chiffrée par la passphrase de l'utilisateur
       table.text('encrypted_private_key').nullable()
       
-      // Stocke le sel utilisé pour dériver la clé de chiffrement (pour que le client puisse reconstruire la clé)
       table.string('key_salt').nullable()
       
-      // Stocke l'algo utilisé (ex: 'aes-256-gcm') pour pérennité
       table.string('key_encryption_algo').nullable()
     })
   }

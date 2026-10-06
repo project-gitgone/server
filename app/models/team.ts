@@ -1,10 +1,9 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column, beforeCreate, hasMany, manyToMany } from '@adonisjs/lucid/orm'
+import { BaseModel, column, beforeCreate, hasMany } from '@adonisjs/lucid/orm'
 import { nanoid } from 'nanoid'
-import type { HasMany, ManyToMany } from '@adonisjs/lucid/types/relations'
-import TeamMember from '#models/team_member'
+import type { HasMany } from '@adonisjs/lucid/types/relations'
 import Project from '#models/project'
-import User from '#models/user'
+import RoleAssignment from '#models/role_assignment'
 
 export default class Team extends BaseModel {
   @column({ isPrimary: true })
@@ -19,14 +18,11 @@ export default class Team extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
 
-  @hasMany(() => TeamMember)
-  declare members: HasMany<typeof TeamMember>
-
-  @manyToMany(() => User, {
-    pivotTable: 'team_members',
-    pivotColumns: ['role'],
+  @hasMany(() => RoleAssignment, {
+    foreignKey: 'scopeId',
+    onQuery: (query) => query.where('scope_type', 'team'),
   })
-  declare users: ManyToMany<typeof User>
+  declare members: HasMany<typeof RoleAssignment>
 
   @hasMany(() => Project)
   declare projects: HasMany<typeof Project>
