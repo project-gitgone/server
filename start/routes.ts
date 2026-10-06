@@ -105,9 +105,18 @@ router
     router.post('/identities/:subject/disable', [CloudServiceController, 'disable'])
     router.post('/identities/:subject/enable', [CloudServiceController, 'enable'])
     router.post('/identities/:subject/link', [CloudServiceController, 'link'])
+    router.post('/identities/:subject/sessions/revoke', [CloudServiceController, 'revokeSessions'])
   })
   .prefix('/api/manage/v1/service')
   .use([middleware.cloudOnly(), middleware.cloudService({ scope: 'membership.sync' })])
+
+router
+  .group(() => {
+    router.post('/instance/reset', [CloudServiceController, 'resetInstance'])
+    router.post('/instance/access/reset', [CloudServiceController, 'resetAccess'])
+  })
+  .prefix('/api/manage/v1/service')
+  .use([middleware.cloudOnly(), middleware.cloudService({ scope: 'instance.reset' })])
 
 router
   .group(() => manageableRoutes())

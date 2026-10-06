@@ -7,7 +7,7 @@ import RoleAssignment from '#models/role_assignment'
 import User from '#models/user'
 import UserIdentity, { CLOUD_PROVIDER } from '#models/user_identity'
 import { cloudConfig } from '#services/cloud'
-import { defaultRoleId } from '#services/rbac/default_roles'
+import { defaultRoleId, type DefaultRoleKey } from '#services/rbac/default_roles'
 
 export type CloudProfile = {
   subject: string
@@ -25,6 +25,11 @@ export class CloudLoginDeniedError extends Exception {
 export class InvalidLoginCodeError extends Exception {
   static status = 400
 }
+
+const CLOUD_TO_INSTANCE_ROLE: Record<string, DefaultRoleKey> = { owner: 'owner', admin: 'admin' }
+
+const instanceRoleOf = (cloudRole: string | null) =>
+  (cloudRole && CLOUD_TO_INSTANCE_ROLE[cloudRole]) || 'member'
 
 export const EMAIL_NOT_VERIFIED = 'Verify your email on GitGone Cloud to access this instance'
 
@@ -85,7 +90,12 @@ function linkCloudProfile(profile: CloudProfile) {
       ))
     if (!local) {
       await RoleAssignment.create(
-        { userId: user.id, roleId: defaultRoleId('member'), scopeType: 'instance', scopeId: null },
+        {
+          userId: user.id,
+          roleId: defaultRoleId(instanceRoleOf(profile.role)),
+          scopeType: 'instance',
+          scopeId: null,
+        },
         { client: trx }
       )
     }

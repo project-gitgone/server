@@ -37,6 +37,8 @@ export type AuditAction =
   | 'users.update'
   | 'users.reset'
   | 'users.delete'
+  | 'instance.reset'
+  | 'access.reset'
 
 export type AuditData = {
   projectId?: string

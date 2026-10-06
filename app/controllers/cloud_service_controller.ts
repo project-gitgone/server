@@ -3,6 +3,7 @@ import User from '#models/user'
 import { audit } from '#services/audit'
 import { deactivateUser, restoreCloudUser, userOfCloudSubject } from '#services/accounts'
 import { cloudConfig } from '#services/cloud'
+import { resetAccess, wipeInstance } from '#services/instance_reset'
 import { completeCloudLogin } from '#services/cloud_login'
 import { cloudIdentityValidator } from '#validators/cloud'
 
@@ -60,5 +61,30 @@ export default class CloudServiceController {
       })
     }
     return response.ok({ userId: user.id })
+  }
+
+  async revokeSessions({ params, request, auth, response }: HttpContext) {
+    const user = await userOfCloudSubject(params.subject)
+    if (!user) return response.ok({ revoked: false })
+    await User.revokeAccessTokens(user)
+    await audit({ auth, request }, 'users.update', {
+      actor: CLOUD_ACTOR,
+      targetType: 'user',
+      targetId: user.id,
+      details: { reason: 'cloud authorization revoked' },
+    })
+    return response.ok({ revoked: true })
+  }
+
+  async resetInstance({ request, auth, response }: HttpContext) {
+    const result = await wipeInstance()
+    await audit({ auth, request }, 'instance.reset', { actor: CLOUD_ACTOR, details: result })
+    return response.ok(result)
+  }
+
+  async resetAccess({ request, auth, response }: HttpContext) {
+    const result = await resetAccess()
+    await audit({ auth, request }, 'access.reset', { actor: CLOUD_ACTOR, details: result })
+    return response.ok(result)
   }
 }

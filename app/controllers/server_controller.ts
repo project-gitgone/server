@@ -70,6 +70,12 @@ export default class ServerController {
   }
 
   async initAdmin({ request, auth, response }: HttpContext) {
+    if (cloudLoginConfig()) {
+      return response.conflict({
+        message:
+          'This instance is managed by GitGone Cloud: run "gitgone login". The owner of the organization becomes administrator.',
+      })
+    }
     const user = await User.first()
     if (user) {
       return response.forbidden({ message: 'Server is already initialized' })

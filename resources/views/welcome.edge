@@ -112,13 +112,15 @@
 
   <main class="card">
     <div class="connect">
-      @if(status === 'setup')
+      @if(status === 'setup' && cloudLogin)
+        <p>Connectez-vous avec votre compte GitGone Cloud : le propriétaire de l'organisation devient administrateur.</p>
+      @elseif(status === 'setup')
         <p>Créer le compte administrateur depuis la CLI</p>
       @else
         <p>Connecter la CLI</p>
       @endif
       <div class="code"><code class="mono">gitgone config set serverUrl {{ serverUrl }}</code><button class="copy" type="button">Copier</button></div>
-      @if(status === 'setup')
+      @if(status === 'setup' && !cloudLogin)
         <div class="code"><code class="mono">gitgone admin setup</code><button class="copy" type="button">Copier</button></div>
       @else
         <div class="code"><code class="mono">gitgone login</code><button class="copy" type="button">Copier</button></div>

@@ -63,6 +63,24 @@ test.group('Cloud login', (group) => {
     assert.isNull(await User.findBy('email', 'unverified@example.com'))
   })
 
+  test('the cloud role decides the instance role of a new account', async ({ assert }) => {
+    const owner = await completeCloudLogin(
+      profile({ subject: 'cloud_owner', email: 'owner@example.com', role: 'owner' })
+    )
+    const admin = await completeCloudLogin(
+      profile({ subject: 'cloud_admin', email: 'admin@example.com', role: 'admin' })
+    )
+    const ownerRole = await RoleAssignment.query().where('user_id', owner.id).firstOrFail()
+    const adminRole = await RoleAssignment.query().where('user_id', admin.id).firstOrFail()
+    assert.equal(ownerRole.roleId, 'role_owner')
+    assert.equal(adminRole.roleId, 'role_admin')
+  })
+
+  test('a cloud instance refuses the password setup of a first admin', async ({ client }) => {
+    const response = await client.post('/api/setup/init-admin').json({})
+    response.assertStatus(409)
+  })
+
   test('a local account is linked only when the cloud email is verified', async ({ assert }) => {
     const local = await createUser('existing@example.com')
     await assert.rejects(() =>
