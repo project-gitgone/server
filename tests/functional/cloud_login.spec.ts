@@ -42,7 +42,8 @@ test.group('Cloud login', (group) => {
     const again = await completeCloudLogin(profile({ name: 'Renamed' }))
     assert.equal(again.id, user.id)
     assert.equal(user.email, 'login@example.com')
-    assert.isNull((await User.findOrFail(user.id)).password)
+    const stored = await User.findOrFail(user.id)
+    assert.isNull(stored.password)
     const identity = await UserIdentity.query().where('subject', 'cloud_user_login').firstOrFail()
     assert.equal(identity.userId, user.id)
     const role = await RoleAssignment.query().where('user_id', user.id).firstOrFail()
@@ -51,7 +52,13 @@ test.group('Cloud login', (group) => {
 
   test('an unverified cloud email neither creates nor links an account', async ({ assert }) => {
     await assert.rejects(() =>
-      completeCloudLogin(profile({ subject: 'cloud_unverified', email: 'unverified@example.com', emailVerified: false }))
+      completeCloudLogin(
+        profile({
+          subject: 'cloud_unverified',
+          email: 'unverified@example.com',
+          emailVerified: false,
+        })
+      )
     )
     assert.isNull(await User.findBy('email', 'unverified@example.com'))
   })
@@ -70,10 +77,14 @@ test.group('Cloud login', (group) => {
   })
 
   test('a deactivated account cannot log in', async ({ assert }) => {
-    const user = await completeCloudLogin(profile({ subject: 'cloud_gone', email: 'gone@example.com' }))
+    const user = await completeCloudLogin(
+      profile({ subject: 'cloud_gone', email: 'gone@example.com' })
+    )
     user.deletedAt = DateTime.now()
     await user.save()
-    await assert.rejects(() => completeCloudLogin(profile({ subject: 'cloud_gone', email: 'gone@example.com' })))
+    await assert.rejects(() =>
+      completeCloudLogin(profile({ subject: 'cloud_gone', email: 'gone@example.com' }))
+    )
   })
 
   test('a login code works once, before expiry, with the right verifier', async ({ assert }) => {
@@ -94,7 +105,9 @@ test.group('Cloud login', (group) => {
     assert,
   }) => {
     const challenge = challengeOf(VERIFIER)
-    const bad = await client.get(`/auth/cloud/login?port=80&state=abc12345&code_challenge=${challenge}`).redirects(0)
+    const bad = await client
+      .get(`/auth/cloud/login?port=80&state=abc12345&code_challenge=${challenge}`)
+      .redirects(0)
     bad.assertStatus(422)
 
     const response = await client
@@ -104,7 +117,10 @@ test.group('Cloud login', (group) => {
     const location = new URL(response.header('location')!)
     assert.equal(location.pathname, '/api/auth/oauth2/authorize')
     assert.equal(location.searchParams.get('client_id'), 'client_test')
-    assert.equal(location.searchParams.get('redirect_uri'), 'https://instance.test/auth/cloud/callback')
+    assert.equal(
+      location.searchParams.get('redirect_uri'),
+      'https://instance.test/auth/cloud/callback'
+    )
     assert.equal(location.searchParams.get('code_challenge_method'), 'S256')
     assert.isString(location.searchParams.get('code_challenge'))
     assert.notEqual(location.searchParams.get('code_challenge'), challenge)
@@ -130,7 +146,10 @@ test.group('Cloud login', (group) => {
     assert.isNull(location.searchParams.get('code'))
   })
 
-  test('cloud login is advertised only when the instance has its client', async ({ client, assert }) => {
+  test('cloud login is advertised only when the instance has its client', async ({
+    client,
+    assert,
+  }) => {
     const enabled = await client.get('/api/capabilities')
     assert.includeMembers(enabled.body().features, ['cloud', 'cloud-login'])
     disableCloud()
@@ -157,16 +176,22 @@ test.group('Cloud login', (group) => {
   test('the CLI exchanges a login code for a session', async ({ client, assert }) => {
     const user = await createUser('exchange@example.com')
     const code = await issueLoginCode(user, challengeOf(VERIFIER))
-    const response = await client.post('/api/auth/cloud/exchange').json({ code, codeVerifier: VERIFIER })
+    const response = await client
+      .post('/api/auth/cloud/exchange')
+      .json({ code, codeVerifier: VERIFIER })
     response.assertStatus(200)
     assert.equal(response.body().user.email, 'exchange@example.com')
     assert.isString(response.body().token.token)
-    const replay = await client.post('/api/auth/cloud/exchange').json({ code, codeVerifier: VERIFIER })
+    const replay = await client
+      .post('/api/auth/cloud/exchange')
+      .json({ code, codeVerifier: VERIFIER })
     replay.assertStatus(400)
   })
 
   test('an SSO account sets its unlock phrase vault once', async ({ client, assert }) => {
-    const user = await completeCloudLogin(profile({ subject: 'cloud_vault', email: 'vault@example.com' }))
+    const user = await completeCloudLogin(
+      profile({ subject: 'cloud_vault', email: 'vault@example.com' })
+    )
     const kdf = { algo: 'scrypt', salt: 'c2FsdHNhbHRzYWx0c2FsdA==', N: 131072, r: 8, p: 1 }
     const upload = await client
       .post('/api/keys/upload-public-key')

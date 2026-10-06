@@ -47,7 +47,8 @@ export default class CloudLoginController {
     if (!cloud) return response.notFound({ message: 'Not found' })
     const cli = request.encryptedCookie(CLI_REQUEST_COOKIE) as CliRequest | null
     response.clearCookie(CLI_REQUEST_COOKIE)
-    if (!cli) return response.badRequest({ message: 'Login request expired. Run "gitgone login" again.' })
+    if (!cli)
+      return response.badRequest({ message: 'Login request expired. Run "gitgone login" again.' })
 
     if (cloud.accessDenied() || cloud.stateMisMatch() || cloud.hasError()) {
       return response.redirect(cliCallback(cli, { error: 'access_denied' }))
@@ -68,7 +69,9 @@ export default class CloudLoginController {
         details: { via: 'cloud' },
       })
       const message = error instanceof CloudLoginDeniedError ? error.message : 'Login failed'
-      return response.redirect(cliCallback(cli, { error: 'access_denied', error_description: message }))
+      return response.redirect(
+        cliCallback(cli, { error: 'access_denied', error_description: message })
+      )
     }
   }
 

@@ -11,12 +11,7 @@ import RoleAssignment from '#models/role_assignment'
 import { permit, see } from '#abilities/main'
 import PermissionResolver from '#services/rbac/permission_resolver'
 import { defaultRoleId } from '#services/rbac/default_roles'
-import {
-  findAssignment,
-  removeRole,
-  roleIdFromInput,
-  setRole,
-} from '#services/rbac/assignments'
+import { findAssignment, removeRole, roleIdFromInput, setRole } from '#services/rbac/assignments'
 import {
   addMemberValidator,
   createProjectValidator,
@@ -36,7 +31,8 @@ export const serializeMember = (assignment: RoleAssignment) => ({
   },
 })
 
-const permissionsOfLevel = (level: PermissionLevel) => PERMISSIONS.filter((p) => permissionLevel(p) === level)
+const permissionsOfLevel = (level: PermissionLevel) =>
+  PERMISSIONS.filter((p) => permissionLevel(p) === level)
 
 export default class WorkspaceController {
   async createTeam({ request, auth, bouncer, response }: HttpContext) {
@@ -165,7 +161,10 @@ export default class WorkspaceController {
       await Promise.all(
         teams.map(async (team) => ({
           ...team.serialize(),
-          permissions: await resolver.permissionsOn({ teamId: team.id }, permissionsOfLevel('team')),
+          permissions: await resolver.permissionsOn(
+            { teamId: team.id },
+            permissionsOfLevel('team')
+          ),
         }))
       )
     )
@@ -188,7 +187,10 @@ export default class WorkspaceController {
           environments.map(async (environment) => [
             environment.name,
             await resolver.permissionsOn(
-              { project, environment: { name: environment.name, protected: environment.protected } },
+              {
+                project,
+                environment: { name: environment.name, protected: environment.protected },
+              },
               permissionsOfLevel('env')
             ),
           ])

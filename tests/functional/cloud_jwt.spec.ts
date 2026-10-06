@@ -9,7 +9,12 @@ test.group('Cloud trust', (group) => {
   test('capabilities announce cloud only when configured', async ({ client, assert }) => {
     const selfHosted = await client.get('/api/capabilities')
     selfHosted.assertStatus(200)
-    assert.includeMembers(selfHosted.body().features, ['rbac', 'environments', 'audit', 'environment-keys'])
+    assert.includeMembers(selfHosted.body().features, [
+      'rbac',
+      'environments',
+      'audit',
+      'environment-keys',
+    ])
     assert.notInclude(selfHosted.body().features, 'cloud')
     assert.isString(selfHosted.body().version)
 

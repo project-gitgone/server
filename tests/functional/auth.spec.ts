@@ -24,7 +24,7 @@ test.group('Auth', () => {
       user: {
         email: 'admin@example.com',
         full_name: 'Super Admin',
-      }
+      },
     })
 
     const user = await User.findByOrFail('email', 'admin@example.com')
@@ -84,7 +84,7 @@ test.group('Auth', () => {
     response.assertBodyContains({
       user: {
         email: 'user@example.com',
-      }
+      },
     })
     assert.properties(response.body(), ['token', 'user'])
   })

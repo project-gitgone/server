@@ -3,7 +3,10 @@ import vine from '@vinejs/vine'
 export const kdfParamsSchema = vine.object({
   algo: vine.enum(['scrypt']),
   salt: vine.string().minLength(22),
-  N: vine.number().withoutDecimals().range([2 ** 17, 2 ** 20]),
+  N: vine
+    .number()
+    .withoutDecimals()
+    .range([2 ** 17, 2 ** 20]),
   r: vine.number().withoutDecimals().range([8, 16]),
   p: vine.number().withoutDecimals().range([1, 4]),
 })

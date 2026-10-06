@@ -4,7 +4,12 @@ import Project from '#models/project'
 import SecretSnapshot from '#models/secret_snapshot'
 import { permit } from '#abilities/main'
 import { audit } from '#services/audit'
-import { applyRetention, ensureEnvironment, environmentRef, snapshotsOf } from '#services/environments'
+import {
+  applyRetention,
+  ensureEnvironment,
+  environmentRef,
+  snapshotsOf,
+} from '#services/environments'
 import { effectiveKeyring, keyringVersion } from '#services/keyring'
 import { isEnvironmentName } from '#validators/environment'
 import { pushSecretValidator } from '#validators/secret'
@@ -23,7 +28,6 @@ const serializeSnapshot = (snapshot: SecretSnapshot) => ({
 })
 
 export default class SecretsController {
-
   async push({ request, auth, bouncer, response }: HttpContext) {
     const user = auth.getUserOrFail()
 
@@ -39,7 +43,9 @@ export default class SecretsController {
       if (await bouncer.denies(permit, 'env.rollback', { project, environment })) {
         return response.forbidden({ message: `You cannot roll back "${payload.environment}"` })
       }
-      const source = await snapshotsOf(project.id, payload.environment).where('id', payload.rollbackOf).first()
+      const source = await snapshotsOf(project.id, payload.environment)
+        .where('id', payload.rollbackOf)
+        .first()
       if (!source) {
         return response.unprocessableEntity({
           message: 'The snapshot to roll back to does not belong to this environment',
@@ -52,7 +58,10 @@ export default class SecretsController {
     let outcome: { snapshot: SecretSnapshot } | { status: 403 | 409; message: string }
     try {
       outcome = await db.transaction(async (trx) => {
-        const locked = await Project.query({ client: trx }).where('id', project.id).forUpdate().firstOrFail()
+        const locked = await Project.query({ client: trx })
+          .where('id', project.id)
+          .forUpdate()
+          .firstOrFail()
         const keyring = await effectiveKeyring(locked, payload.environment)
         const keyVersion = keyringVersion(keyring)
 
@@ -64,20 +73,30 @@ export default class SecretsController {
 
         if (payload.cryptoVersion !== 2) {
           if (!env.get('ALLOW_LEGACY_CLIENTS', true)) {
-            return { status: 403 as const, message: 'This server requires an up-to-date GitGone CLI.' }
+            return {
+              status: 403 as const,
+              message: 'This server requires an up-to-date GitGone CLI.',
+            }
           }
           if (keyring.kind === 'environment') {
-            return { status: 409 as const, message: 'This environment has its own key: update your GitGone CLI.' }
+            return {
+              status: 409 as const,
+              message: 'This environment has its own key: update your GitGone CLI.',
+            }
           }
         } else {
           if ((payload.keyScope ?? 'project') !== keyring.kind) {
             return {
               status: 409 as const,
-              message: 'The key of this environment changed since you fetched it. Update your GitGone CLI and retry.',
+              message:
+                'The key of this environment changed since you fetched it. Update your GitGone CLI and retry.',
             }
           }
           if (payload.keyVersion !== keyVersion) {
-            return { status: 409 as const, message: 'The key has been rotated since you fetched it. Please retry.' }
+            return {
+              status: 409 as const,
+              message: 'The key has been rotated since you fetched it. Please retry.',
+            }
           }
           if (payload.version !== nextVersion) {
             return {
@@ -120,7 +139,10 @@ export default class SecretsController {
     await audit({ auth, request }, payload.rollbackOf ? 'secrets.rollback' : 'secrets.push', {
       projectId: project.id,
       environment: payload.environment,
-      details: { version: snapshot.version, ...(payload.rollbackOf ? { rollbackOf: payload.rollbackOf } : {}) },
+      details: {
+        version: snapshot.version,
+        ...(payload.rollbackOf ? { rollbackOf: payload.rollbackOf } : {}),
+      },
     })
     return response.created(snapshot)
   }
@@ -142,12 +164,12 @@ export default class SecretsController {
     }
 
     if (project.disallowPull && qs.mode !== 'memory') {
-        return response.forbidden({ message: 'This project is configured for memory-only injection. Pull is disabled.' })
+      return response.forbidden({
+        message: 'This project is configured for memory-only injection. Pull is disabled.',
+      })
     }
 
-    const snapshot = await snapshotsOf(project.id, qs.env)
-      .orderBy('version', 'desc')
-      .first()
+    const snapshot = await snapshotsOf(project.id, qs.env).orderBy('version', 'desc').first()
 
     if (!snapshot) {
       return response.notFound({ message: 'No secrets found for this environment' })
@@ -183,16 +205,15 @@ export default class SecretsController {
         .preload('creator', (q) => q.select('id', 'email', 'full_name'))
         .select('id', 'version', 'crypto_version', 'key_version', 'created_at', 'created_by')
 
-        if(history.length === 0) {
-          return response.notFound('No secret history found for this environment')
-        }
+      if (history.length === 0) {
+        return response.notFound('No secret history found for this environment')
+      }
 
       return response.ok(history)
     } catch (error) {
-      throw error;
+      throw error
     }
   }
-
 
   async getVersion({ params, request, auth, bouncer, response }: HttpContext) {
     const snapshot = await SecretSnapshot.findOrFail(params.id)

@@ -13,15 +13,12 @@ test.group('Project Keys', () => {
       fullName: 'Key User',
     })
 
-    const response = await client
-      .post('/api/keys/upload-public-key')
-      .loginAs(user)
-      .json({
-        publicKey: 'user_public_key',
-        encryptedPrivateKey: 'user_encrypted_private_key',
-        keySalt: 'salt',
-        keyEncryptionAlgo: 'aes-256-gcm',
-      })
+    const response = await client.post('/api/keys/upload-public-key').loginAs(user).json({
+      publicKey: 'user_public_key',
+      encryptedPrivateKey: 'user_encrypted_private_key',
+      keySalt: 'salt',
+      keyEncryptionAlgo: 'aes-256-gcm',
+    })
 
     response.assertStatus(200)
 
@@ -40,9 +37,7 @@ test.group('Project Keys', () => {
       keyEncryptionAlgo: 'aes-256-gcm',
     })
 
-    const response = await client
-      .get('/api/keys/vault')
-      .loginAs(user)
+    const response = await client.get('/api/keys/vault').loginAs(user)
 
     response.assertStatus(200)
     response.assertBodyContains({
@@ -82,31 +77,24 @@ test.group('Project Keys', () => {
 
     setupResponse.assertStatus(200)
 
-    const pendingResponse = await client
-      .get(`/api/keys/${project.id}/pending`)
-      .loginAs(owner)
+    const pendingResponse = await client.get(`/api/keys/${project.id}/pending`).loginAs(owner)
 
     pendingResponse.assertStatus(200)
     assert.lengthOf(pendingResponse.body(), 1)
     assert.equal(pendingResponse.body()[0].id, otherUser.id)
 
-    const shareResponse = await client
-      .post(`/api/keys/${project.id}/share`)
-      .loginAs(owner)
-      .json({
-        targetUserId: otherUser.id,
-        encryptedKey: 'other_encrypted_project_key',
-      })
+    const shareResponse = await client.post(`/api/keys/${project.id}/share`).loginAs(owner).json({
+      targetUserId: otherUser.id,
+      encryptedKey: 'other_encrypted_project_key',
+    })
 
     shareResponse.assertStatus(200)
 
-    const getResponse = await client
-      .get(`/api/keys/${project.id}`)
-      .loginAs(otherUser)
+    const getResponse = await client.get(`/api/keys/${project.id}`).loginAs(otherUser)
 
     getResponse.assertStatus(200)
     getResponse.assertBodyContains({
-      encryptedKey: 'other_encrypted_project_key'
+      encryptedKey: 'other_encrypted_project_key',
     })
   })
 
@@ -125,12 +113,13 @@ test.group('Project Keys', () => {
       teamId: team.id,
     })
 
-    const response = await client
-      .get(`/api/keys/${project.id}`)
-      .loginAs(user)
+    const response = await client.get(`/api/keys/${project.id}`).loginAs(user)
 
     response.assertStatus(404)
-    response.assertBodyContains({ message: 'The key has not been shared with you yet. Ask a maintainer to run "gitgone keys share".' })
+    response.assertBodyContains({
+      message:
+        'The key has not been shared with you yet. Ask a maintainer to run "gitgone keys share".',
+    })
   })
 
   test('cannot overwrite existing public key', async ({ client, assert }) => {
@@ -142,13 +131,10 @@ test.group('Project Keys', () => {
       encryptedPrivateKey: 'original_vault',
     })
 
-    const response = await client
-      .post('/api/keys/upload-public-key')
-      .loginAs(user)
-      .json({
-        publicKey: 'attacker_pub',
-        encryptedPrivateKey: 'attacker_vault',
-      })
+    const response = await client.post('/api/keys/upload-public-key').loginAs(user).json({
+      publicKey: 'attacker_pub',
+      encryptedPrivateKey: 'attacker_vault',
+    })
 
     response.assertStatus(409)
 
@@ -180,13 +166,10 @@ test.group('Project Keys', () => {
       teamId: team.id,
     })
 
-    const response = await client
-      .post(`/api/keys/${project.id}/share`)
-      .loginAs(owner)
-      .json({
-        targetUserId: outsider.id,
-        encryptedKey: 'outsider_encrypted_project_key',
-      })
+    const response = await client.post(`/api/keys/${project.id}/share`).loginAs(owner).json({
+      targetUserId: outsider.id,
+      encryptedKey: 'outsider_encrypted_project_key',
+    })
 
     response.assertStatus(422)
 

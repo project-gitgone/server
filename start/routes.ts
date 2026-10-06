@@ -1,8 +1,5 @@
 import router from '@adonisjs/core/services/router'
 import { middleware } from '#start/kernel'
-import env from './env.js'
-import RoleAssignment from '#models/role_assignment'
-import { defaultRoleId } from '#services/rbac/default_roles'
 
 const ServerController = () => import('#controllers/server_controller')
 const AuthController = () => import('#controllers/auth_controller')
@@ -19,29 +16,7 @@ const EnvironmentsController = () => import('#controllers/environments_controlle
 const AuditController = () => import('#controllers/audit_controller')
 const CloudServiceController = () => import('#controllers/cloud_service_controller')
 
-router.get('/', async ({ request, view }) => {
-  const wantsJson =
-    request.accepts(['html', 'json']) === 'json' || request.header('accept')?.includes('json')
-
-  const hasAdmin = !!(await RoleAssignment.query()
-    .where('role_id', defaultRoleId('owner'))
-    .whereHas('user', (user) => user.whereNull('deleted_at'))
-    .first())
-
-  const instanceName = env.get('INSTANCE_NAME') || 'default'
-
-  if (wantsJson) {
-    return {
-      status: 'ok',
-      instance: instanceName,
-    }
-  }
-
-  return view.render('welcome', {
-    hasAdmin,
-    instanceName,
-  })
-})
+router.get('/', [ServerController, 'welcome'])
 
 router.get('/healthcheck', [ServerController, 'health'])
 router.get('/api/capabilities', [ServerController, 'capabilities'])
@@ -90,7 +65,10 @@ function manageableRoutes() {
   router.post('/projects/:id/environments', [EnvironmentsController, 'store'])
   router.patch('/projects/:id/environments/:environmentId', [EnvironmentsController, 'update'])
   router.get('/keys/:projectId/pending', [KeyringController, 'pending'])
-  router.get('/projects/:projectId/environments/:environment/key/pending', [KeyringController, 'pending'])
+  router.get('/projects/:projectId/environments/:environment/key/pending', [
+    KeyringController,
+    'pending',
+  ])
   router.get('/projects/:projectId/tokens', [ProjectTokensController, 'index'])
   router.delete('/projects/tokens/:id', [ProjectTokensController, 'destroy'])
   router.get('/secrets/history', [SecretsController, 'history'])

@@ -15,7 +15,8 @@ async function workspace() {
   const project = await Project.create({ name: 'P3 hardening project', teamId: team.id })
   const maintainer = await createUser(`p3-m-${Math.random()}@example.com`)
   await grantRole(maintainer, 'maintainer', { team })
-  const base = (environment: string) => `/api/projects/${project.id}/environments/${environment}/key`
+  const base = (environment: string) =>
+    `/api/projects/${project.id}/environments/${environment}/key`
   return { team, project, maintainer, base }
 }
 
@@ -27,7 +28,12 @@ test.group('Phase 3 hardening', () => {
     client,
   }) => {
     const { project, maintainer } = await workspace()
-    await Environment.create({ projectId: project.id, name: 'production', protected: true, keyVersion: 1 })
+    await Environment.create({
+      projectId: project.id,
+      name: 'production',
+      protected: true,
+      keyVersion: 1,
+    })
 
     const push = (extra: Record<string, unknown>) =>
       client
@@ -38,7 +44,12 @@ test.group('Phase 3 hardening', () => {
     oldClient.assertStatus(409)
     const legacy = await push({})
     legacy.assertStatus(409)
-    const current = await push({ cryptoVersion: 2, version: 1, keyVersion: 1, keyScope: 'environment' })
+    const current = await push({
+      cryptoVersion: 2,
+      version: 1,
+      keyVersion: 1,
+      keyScope: 'environment',
+    })
     current.assertStatus(201)
   })
 
@@ -49,7 +60,12 @@ test.group('Phase 3 hardening', () => {
     const { team, project, maintainer } = await workspace()
     const viewer = await createUser(`p3-v-${Math.random()}@example.com`)
     await grantRole(viewer, 'viewer', { team })
-    const staging = await Environment.create({ projectId: project.id, name: 'staging', protected: false, keyVersion: 1 })
+    const staging = await Environment.create({
+      projectId: project.id,
+      name: 'staging',
+      protected: false,
+      keyVersion: 1,
+    })
     await EnvironmentKey.create({ environmentId: staging.id, userId: viewer.id, encryptedKey: 'k' })
 
     const response = await client
@@ -69,7 +85,12 @@ test.group('Phase 3 hardening', () => {
     const user = await createUser(`p3-u-${Math.random()}@example.com`)
     await grantRole(admin, 'admin')
     await grantRole(user, 'member')
-    const qa = await Environment.create({ projectId: project.id, name: 'qa', protected: false, keyVersion: 1 })
+    const qa = await Environment.create({
+      projectId: project.id,
+      name: 'qa',
+      protected: false,
+      keyVersion: 1,
+    })
     await EnvironmentKey.create({ environmentId: qa.id, userId: user.id, encryptedKey: 'k' })
 
     const response = await client.post(`/api/users/${user.id}/reset-credentials`).loginAs(admin)
@@ -87,8 +108,18 @@ test.group('Phase 3 hardening', () => {
     const role = await customRole('Prod on-call', [
       { permission: 'env.read', environments: { type: 'list', names: ['production'] } },
     ])
-    await RoleAssignment.create({ userId: onCall.id, roleId: role.id, scopeType: 'project', scopeId: project.id })
-    await Environment.create({ projectId: project.id, name: 'production', protected: true, keyVersion: 1 })
+    await RoleAssignment.create({
+      userId: onCall.id,
+      roleId: role.id,
+      scopeType: 'project',
+      scopeId: project.id,
+    })
+    await Environment.create({
+      projectId: project.id,
+      name: 'production',
+      protected: true,
+      keyVersion: 1,
+    })
     await Environment.create({ projectId: project.id, name: 'staging', protected: false })
 
     assert.deepEqual(await keyringReaders(projectKeyring(project)), [maintainer.id])
@@ -100,9 +131,23 @@ test.group('Phase 3 hardening', () => {
     const { project, maintainer, base } = await workspace()
     const manager = await createUser(`p3-mm-${Math.random()}@example.com`)
     const role = await customRole('Members only', [{ permission: 'project.members.manage' }])
-    await RoleAssignment.create({ userId: manager.id, roleId: role.id, scopeType: 'project', scopeId: project.id })
-    const production = await Environment.create({ projectId: project.id, name: 'production', protected: true, keyVersion: 1 })
-    await EnvironmentKey.create({ environmentId: production.id, userId: maintainer.id, encryptedKey: 'k' })
+    await RoleAssignment.create({
+      userId: manager.id,
+      roleId: role.id,
+      scopeType: 'project',
+      scopeId: project.id,
+    })
+    const production = await Environment.create({
+      projectId: project.id,
+      name: 'production',
+      protected: true,
+      keyVersion: 1,
+    })
+    await EnvironmentKey.create({
+      environmentId: production.id,
+      userId: maintainer.id,
+      encryptedKey: 'k',
+    })
 
     const byManager = await client
       .post(`${base('production')}/share`)
@@ -123,12 +168,21 @@ test.group('Phase 3 hardening', () => {
     const role = await customRole('Blind writer', [
       { permission: 'env.write', environments: { type: 'all' } },
     ])
-    await RoleAssignment.create({ userId: writer.id, roleId: role.id, scopeType: 'project', scopeId: project.id })
+    await RoleAssignment.create({
+      userId: writer.id,
+      roleId: role.id,
+      scopeType: 'project',
+      scopeId: project.id,
+    })
 
     const response = await client
       .post(`${base('qa')}/rotate`)
       .loginAs(writer)
-      .json({ expectedKeyVersion: 0, keys: [{ userId: maintainer.id, encryptedKey: 'k' }], snapshots: [] })
+      .json({
+        expectedKeyVersion: 0,
+        keys: [{ userId: maintainer.id, encryptedKey: 'k' }],
+        snapshots: [],
+      })
     response.assertStatus(403)
   })
 })

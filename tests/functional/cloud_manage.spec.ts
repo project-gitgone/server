@@ -53,7 +53,10 @@ test.group('Cloud management API', (group) => {
   test('encrypted content is out of reach', async ({ client }) => {
     await enableCloud()
     await linkedUser('cloud_reader')
-    for (const path of ['/api/manage/v1/secrets/latest?projectId=x&env=development', '/api/manage/v1/keys/vault']) {
+    for (const path of [
+      '/api/manage/v1/secrets/latest?projectId=x&env=development',
+      '/api/manage/v1/keys/vault',
+    ]) {
       const response = await client.get(path).header('Authorization', bearer('cloud_reader'))
       response.assertStatus(404)
     }
@@ -66,7 +69,9 @@ test.group('Cloud management API', (group) => {
     await deleted.save()
 
     for (const subject of ['cloud_unknown', 'cloud_deleted', 'cloud:service']) {
-      const response = await client.get('/api/manage/v1/auth/me').header('Authorization', bearer(subject))
+      const response = await client
+        .get('/api/manage/v1/auth/me')
+        .header('Authorization', bearer(subject))
       response.assertStatus(401)
     }
     const noToken = await client.get('/api/manage/v1/auth/me')
@@ -100,7 +105,9 @@ test.group('Cloud management API', (group) => {
     })
 
     for (const path of ['/auth/me', '/users', `/projects/${project.id}/tokens`]) {
-      const response = await client.get(`/api/manage/v1${path}`).header('Authorization', bearer('cloud_admin_keys'))
+      const response = await client
+        .get(`/api/manage/v1${path}`)
+        .header('Authorization', bearer('cloud_admin_keys'))
       response.assertStatus(200)
       const body = JSON.stringify(response.body())
       for (const secret of ['WRAPPED_PRIVATE_KEY', 'SALT_VALUE', 'WRAPPED_PROJECT_KEY']) {
@@ -119,14 +126,18 @@ test.group('Cloud management API', (group) => {
     await grantRole(developer, 'developer', { team: visible })
     await grantRole(admin, 'admin')
 
-    const mine = await client.get('/api/manage/v1/teams').header('Authorization', bearer('cloud_teams_dev'))
+    const mine = await client
+      .get('/api/manage/v1/teams')
+      .header('Authorization', bearer('cloud_teams_dev'))
     mine.assertStatus(200)
     assert.deepEqual(
       mine.body().map((t: { id: string }) => t.id),
       [visible.id]
     )
 
-    const all = await client.get('/api/manage/v1/teams').header('Authorization', bearer('cloud_teams_admin'))
+    const all = await client
+      .get('/api/manage/v1/teams')
+      .header('Authorization', bearer('cloud_teams_admin'))
     assert.includeMembers(
       all.body().map((t: { id: string }) => t.id),
       [visible.id, hidden.id]
@@ -142,7 +153,9 @@ test.group('Cloud management API', (group) => {
     const developer = await linkedUser('cloud_rights_dev')
     await grantRole(developer, 'developer', { team })
 
-    const teams = await client.get('/api/manage/v1/teams').header('Authorization', bearer('cloud_rights_dev'))
+    const teams = await client
+      .get('/api/manage/v1/teams')
+      .header('Authorization', bearer('cloud_rights_dev'))
     assert.notInclude(teams.body()[0].permissions, 'team.members.manage')
 
     const rights = await client

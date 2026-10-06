@@ -14,11 +14,36 @@ test.group('RBAC catalogue', () => {
   })
 
   test('environment scopes', ({ assert }) => {
-    assert.isTrue(environmentInScope({ type: 'all' }, { name: 'production', protected: defaultProtection('production') }))
-    assert.isFalse(environmentInScope({ type: 'unprotected' }, { name: 'production', protected: defaultProtection('production') }))
-    assert.isTrue(environmentInScope({ type: 'unprotected' }, { name: 'staging', protected: defaultProtection('staging') }))
-    assert.isTrue(environmentInScope({ type: 'list', names: ['staging'] }, { name: 'staging', protected: defaultProtection('staging') }))
-    assert.isFalse(environmentInScope({ type: 'list', names: ['staging'] }, { name: 'development', protected: defaultProtection('development') }))
+    assert.isTrue(
+      environmentInScope(
+        { type: 'all' },
+        { name: 'production', protected: defaultProtection('production') }
+      )
+    )
+    assert.isFalse(
+      environmentInScope(
+        { type: 'unprotected' },
+        { name: 'production', protected: defaultProtection('production') }
+      )
+    )
+    assert.isTrue(
+      environmentInScope(
+        { type: 'unprotected' },
+        { name: 'staging', protected: defaultProtection('staging') }
+      )
+    )
+    assert.isTrue(
+      environmentInScope(
+        { type: 'list', names: ['staging'] },
+        { name: 'staging', protected: defaultProtection('staging') }
+      )
+    )
+    assert.isFalse(
+      environmentInScope(
+        { type: 'list', names: ['staging'] },
+        { name: 'development', protected: defaultProtection('development') }
+      )
+    )
   })
 
   test('env permissions default to all environments', ({ assert }) => {

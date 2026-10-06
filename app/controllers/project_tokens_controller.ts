@@ -109,7 +109,9 @@ export default class ProjectTokensController {
     }
 
     if (cryptoVersion === 1 && !legacyTokensAllowed()) {
-      return response.unauthorized('Legacy tokens are disabled on this server. Please recreate your token.')
+      return response.unauthorized(
+        'Legacy tokens are disabled on this server. Please recreate your token.'
+      )
     }
 
     const token = await ProjectToken.query()

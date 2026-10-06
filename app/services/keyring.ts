@@ -20,6 +20,11 @@ export type Keyring =
       environment: EnvironmentRef & { record: Environment | null }
     }
 
+export async function deleteCount(query: { delete(): Promise<unknown> }) {
+  const result = (await query.delete()) as number[]
+  return Number(result[0] ?? 0)
+}
+
 export const projectKeyring = (project: Project): Keyring => ({ kind: 'project', project })
 
 export async function environmentKeyring(project: Project, name: string): Promise<Keyring> {
@@ -41,7 +46,9 @@ export async function effectiveKeyring(project: Project, name: string): Promise<
 }
 
 export const keyringVersion = (keyring: Keyring) =>
-  keyring.kind === 'project' ? keyring.project.keyVersion : (keyring.environment.record?.keyVersion ?? 0)
+  keyring.kind === 'project'
+    ? keyring.project.keyVersion
+    : (keyring.environment.record?.keyVersion ?? 0)
 
 export async function keyringReaders(keyring: Keyring): Promise<string[]> {
   if (keyring.kind === 'environment') {
@@ -78,7 +85,10 @@ export async function keyringRecipients(keyring: Keyring, client?: TransactionCl
 
 export function findUserKey(keyring: Keyring, userId: string) {
   if (keyring.kind === 'project') {
-    return ProjectKey.query().where('project_id', keyring.project.id).where('user_id', userId).first()
+    return ProjectKey.query()
+      .where('project_id', keyring.project.id)
+      .where('user_id', userId)
+      .first()
   }
   const environmentId = keyring.environment.record?.id
   if (!environmentId) return Promise.resolve(null)
@@ -154,8 +164,12 @@ export async function revokeLostKeys(projects: Project[], userId?: string): Prom
       .where('project_id', project.id)
       .whereNotIn('user_id', projectReaders)
     if (userId) lostProjectKey.where('user_id', userId)
-    if (Number((await lostProjectKey.delete())[0] ?? 0) > 0) {
-      result.projectsToRotate.push({ id: project.id, name: project.name, keyVersion: project.keyVersion })
+    if ((await deleteCount(lostProjectKey)) > 0) {
+      result.projectsToRotate.push({
+        id: project.id,
+        name: project.name,
+        keyVersion: project.keyVersion,
+      })
     }
 
     const separated = await Environment.query()
@@ -167,7 +181,7 @@ export async function revokeLostKeys(projects: Project[], userId?: string): Prom
         .where('environment_id', environment.id)
         .whereNotIn('user_id', readers)
       if (userId) lostKey.where('user_id', userId)
-      if (Number((await lostKey.delete())[0] ?? 0) === 0) continue
+      if ((await deleteCount(lostKey)) === 0) continue
       environment.rotationRequired = true
       await environment.save()
       result.environmentsToRotate.push({
@@ -182,9 +196,8 @@ export async function revokeLostKeys(projects: Project[], userId?: string): Prom
 
 export async function revokeAllKeysOf(userId: string) {
   await ProjectKey.query().where('user_id', userId).delete()
-  const environmentIds = (await EnvironmentKey.query().where('user_id', userId).select('environment_id')).map(
-    (k) => k.environmentId
-  )
+  const heldKeys = await EnvironmentKey.query().where('user_id', userId).select('environment_id')
+  const environmentIds = heldKeys.map((k) => k.environmentId)
   await EnvironmentKey.query().where('user_id', userId).delete()
   if (environmentIds.length > 0) {
     await Environment.query().whereIn('id', environmentIds).update({ rotation_required: true })

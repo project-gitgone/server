@@ -76,7 +76,11 @@ export default class UsersController {
     await setRole(user.id, roleId, { type: 'instance' }, isManager ? actor : undefined)
 
     await audit({ auth, request }, 'users.create', { targetType: 'user', targetId: user.id })
-    await auditAccess({ auth, request }, 'access.grant', { userId: user.id, scope: { type: 'instance' }, roleId })
+    await auditAccess({ auth, request }, 'access.grant', {
+      userId: user.id,
+      scope: { type: 'instance' },
+      roleId,
+    })
     return response.created({
       user,
       activationCode,
@@ -149,7 +153,10 @@ export default class UsersController {
     await assertCanActOn(auth.getUserOrFail(), userToDelete.id)
     await deactivateUser(userToDelete, { by: 'instance', revokeKeys: false })
 
-    await audit({ auth, request }, 'users.delete', { targetType: 'user', targetId: userToDelete.id })
+    await audit({ auth, request }, 'users.delete', {
+      targetType: 'user',
+      targetId: userToDelete.id,
+    })
     return response.ok({ message: 'User deleted successfully' })
   }
 }

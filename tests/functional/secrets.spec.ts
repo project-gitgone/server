@@ -1,4 +1,3 @@
-
 import { test } from '@japa/runner'
 import { grantRole } from '#tests/helpers/rbac'
 import User from '#models/user'

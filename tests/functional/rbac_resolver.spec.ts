@@ -34,8 +34,18 @@ test.group('RBAC resolver', () => {
     await grantRole(user, 'developer', { project })
 
     const resolver = PermissionResolver.for(user)
-    assert.isTrue(await resolver.can('env.write', { project, environment: { name: 'staging', protected: false } }))
-    assert.isFalse(await resolver.can('env.write', { project, environment: { name: 'production', protected: true } }))
+    assert.isTrue(
+      await resolver.can('env.write', {
+        project,
+        environment: { name: 'staging', protected: false },
+      })
+    )
+    assert.isFalse(
+      await resolver.can('env.write', {
+        project,
+        environment: { name: 'production', protected: true },
+      })
+    )
     assert.isTrue(await resolver.canSee({ teamId: team.id }))
     assert.deepEqual(await resolver.projectVisibility(), {
       all: false,
@@ -55,6 +65,9 @@ test.group('RBAC resolver', () => {
     await grantRole(outsider, 'developer', { team: await Team.create({ name: 'Other' }) })
 
     assert.deepEqual(await usersWithPermission(project, 'env.read'), [viewer.id])
-    assert.deepEqual(await usersWithPermission(project, 'env.read', { name: 'production', protected: true }), [])
+    assert.deepEqual(
+      await usersWithPermission(project, 'env.read', { name: 'production', protected: true }),
+      []
+    )
   })
 })

@@ -4,7 +4,8 @@ export type EnvironmentRef = { name: string; protected: boolean }
 
 const PROTECTED_BY_DEFAULT = new Set(['production', 'prod'])
 
-export const defaultProtection = (name: string) => PROTECTED_BY_DEFAULT.has(name.trim().toLowerCase())
+export const defaultProtection = (name: string) =>
+  PROTECTED_BY_DEFAULT.has(name.trim().toLowerCase())
 
 const sameName = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase()
 

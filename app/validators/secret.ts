@@ -8,8 +8,18 @@ export const pushSecretValidator = vine.compile(
     rollbackOf: vine.string().optional(),
     keyScope: vine.enum(['project', 'environment']).optional(),
     cryptoVersion: vine.literal(2).optional(),
-    version: vine.number().withoutDecimals().positive().optional().requiredIfExists('cryptoVersion'),
-    keyVersion: vine.number().withoutDecimals().positive().optional().requiredIfExists('cryptoVersion'),
+    version: vine
+      .number()
+      .withoutDecimals()
+      .positive()
+      .optional()
+      .requiredIfExists('cryptoVersion'),
+    keyVersion: vine
+      .number()
+      .withoutDecimals()
+      .positive()
+      .optional()
+      .requiredIfExists('cryptoVersion'),
     encryptedData: vine.object({
       ciphertext: vine.string(),
       iv: vine.string(),

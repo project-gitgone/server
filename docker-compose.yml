@@ -1,16 +1,38 @@
+name: gitgone-server
+
 services:
-  postgres:
+  db:
     image: postgres:16-alpine
-    container_name: gitgone_db
     ports:
-      - "5432:5432"
+      - '${DB_PORT:-5433}:5432'
     environment:
       POSTGRES_USER: ${DB_USER:-adonis}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
       POSTGRES_DB: ${DB_DATABASE:-gitgone}
     volumes:
       - pgdata:/var/lib/postgresql/data
-    restart: always
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-adonis} -d ${DB_DATABASE:-gitgone}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  db-test:
+    image: postgres:16-alpine
+    ports:
+      - '5434:5432'
+    environment:
+      POSTGRES_USER: adonis
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: gitgone_test
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U adonis -d gitgone_test']
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 volumes:
   pgdata:
+    name: server_pgdata

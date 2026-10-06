@@ -6,10 +6,15 @@ export default class extends BaseSchema {
   async up() {
     this.schema.createTable(this.tableName, (table) => {
       table.string('id').primary()
-      table.string('project_id').notNullable().references('id').inTable('projects').onDelete('CASCADE')
+      table
+        .string('project_id')
+        .notNullable()
+        .references('id')
+        .inTable('projects')
+        .onDelete('CASCADE')
       table.string('environment').notNullable()
       table.integer('version').notNullable()
-      
+
       table.text('ciphertext').notNullable()
       table.string('iv').notNullable()
       table.string('auth_tag').notNullable()

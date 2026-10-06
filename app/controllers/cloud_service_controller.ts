@@ -40,7 +40,9 @@ export default class CloudServiceController {
   async link({ params, request, auth, response }: HttpContext) {
     const profile = await request.validateUsing(cloudIdentityValidator)
     const known = await userOfCloudSubject(params.subject)
-    const local = await User.query().whereRaw('lower(email) = ?', [profile.email.toLowerCase()]).first()
+    const local = await User.query()
+      .whereRaw('lower(email) = ?', [profile.email.toLowerCase()])
+      .first()
     const user = await completeCloudLogin({
       subject: params.subject,
       email: profile.email,

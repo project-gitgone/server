@@ -5,7 +5,13 @@ import AuditEvent from '#models/audit_event'
 import { createUser, grantRole } from '#tests/helpers/rbac'
 
 const event = (projectId: string | null, action = 'secrets.pull') =>
-  AuditEvent.create({ actorType: 'user', actorId: 'usr_x', actorLabel: 'x@example.com', action, projectId })
+  AuditEvent.create({
+    actorType: 'user',
+    actorId: 'usr_x',
+    actorLabel: 'x@example.com',
+    action,
+    projectId,
+  })
 
 test.group('Audit read', () => {
   test('a maintainer reads their project only', async ({ client, assert }) => {

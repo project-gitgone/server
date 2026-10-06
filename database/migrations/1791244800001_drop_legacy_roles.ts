@@ -26,7 +26,10 @@ export default class extends BaseSchema {
       await db.rawQuery(
         `UPDATE users SET system_role = 'SUPERADMIN' WHERE id IN (SELECT user_id FROM role_assignments WHERE scope_type = 'instance' AND role_id = 'role_owner')`
       )
-      const rows = await db.from('role_assignments').where('scope_type', 'team').select('user_id', 'scope_id', 'role_id')
+      const rows = await db
+        .from('role_assignments')
+        .where('scope_type', 'team')
+        .select('user_id', 'scope_id', 'role_id')
       if (rows.length > 0) {
         await db.table('team_members').multiInsert(
           rows.map((r) => ({

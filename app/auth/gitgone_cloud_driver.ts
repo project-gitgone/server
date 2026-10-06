@@ -17,7 +17,10 @@ export type GitGoneCloudConfig = {
 
 const VERIFIER_COOKIE = 'gitgone_cloud_pkce'
 
-export class GitGoneCloudDriver extends Oauth2Driver<Oauth2AccessToken, 'openid' | 'profile' | 'email'> {
+export class GitGoneCloudDriver extends Oauth2Driver<
+  Oauth2AccessToken,
+  'openid' | 'profile' | 'email'
+> {
   protected authorizeUrl: string
   protected accessTokenUrl: string
   protected userInfoUrl: string
@@ -57,7 +60,9 @@ export class GitGoneCloudDriver extends Oauth2Driver<Oauth2AccessToken, 'openid'
     return typeof verifier === 'string' ? verifier : null
   }
 
-  protected configureRedirectRequest(request: RedirectRequestContract<'openid' | 'profile' | 'email'>) {
+  protected configureRedirectRequest(
+    request: RedirectRequestContract<'openid' | 'profile' | 'email'>
+  ) {
     request.scopes(['openid', 'profile', 'email'])
     request.param('response_type', 'code')
   }

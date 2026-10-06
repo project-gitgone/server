@@ -10,6 +10,7 @@ import { permit, see } from '#abilities/main'
 import { audit } from '#services/audit'
 import { ensureEnvironment } from '#services/environments'
 import {
+  deleteCount,
   environmentKeyring,
   findUserKey,
   keyHolders,
@@ -25,7 +26,6 @@ import type { EnvironmentRef } from '#services/rbac/environments'
 import { ANY_ENVIRONMENT } from '#services/rbac/resolve'
 import { isEnvironmentName } from '#validators/environment'
 import { rotateProjectKeyValidator, shareProjectKeyValidator } from '#validators/key'
-
 
 type Resolved = {
   project: Project
@@ -88,7 +88,8 @@ export default class KeyringController {
     const key = await findUserKey(effective, auth.getUserOrFail().id)
     if (!key) {
       return response.notFound({
-        message: 'The key has not been shared with you yet. Ask a maintainer to run "gitgone keys share".',
+        message:
+          'The key has not been shared with you yet. Ask a maintainer to run "gitgone keys share".',
       })
     }
 
@@ -98,7 +99,9 @@ export default class KeyringController {
       keyVersion: keyringVersion(effective),
       rotationRequired: environmentRecord(own)?.rotationRequired ?? false,
       canSeparate:
-        own.kind === 'environment' && effective.kind === 'project' && (await canRotate(ctx, resolved)),
+        own.kind === 'environment' &&
+        effective.kind === 'project' &&
+        (await canRotate(ctx, resolved)),
     })
   }
 
@@ -128,7 +131,9 @@ export default class KeyringController {
     }
     const payload = await request.validateUsing(shareProjectKeyValidator)
     if (payload.keyVersion !== undefined && payload.keyVersion !== keyringVersion(keyring)) {
-      return response.conflict({ message: 'The key has been rotated since you fetched it. Please retry.' })
+      return response.conflict({
+        message: 'The key has been rotated since you fetched it. Please retry.',
+      })
     }
 
     const recipients = await keyringRecipients(keyring)
@@ -215,22 +220,36 @@ export default class KeyringController {
               .forUpdate()
               .firstOrFail()
           : null
-      const current = lockedEnvironment ? (lockedEnvironment.keyVersion ?? 0) : lockedProject.keyVersion
+      const current = lockedEnvironment
+        ? (lockedEnvironment.keyVersion ?? 0)
+        : lockedProject.keyVersion
       if (current !== payload.expectedKeyVersion) {
         return response.conflict({ message: 'The key has already been rotated. Please retry.' })
       }
 
       const recipients = await keyringRecipients(keyring, trx)
       const readers = await recipients.query().select('id')
-      if (!sameIds(readers.map((u) => u.id), payload.keys.map((k) => k.userId))) {
+      if (
+        !sameIds(
+          readers.map((u) => u.id),
+          payload.keys.map((k) => k.userId)
+        )
+      ) {
         return response.unprocessableEntity({
           message: 'The new key must be shared with exactly the current readers. Please retry.',
         })
       }
 
       const existing = await keyringSnapshots(keyring, trx).select('id')
-      if (!sameIds(existing.map((s) => s.id), payload.snapshots.map((s) => s.id))) {
-        return response.conflict({ message: 'Secrets were pushed during the rotation. Please retry.' })
+      if (
+        !sameIds(
+          existing.map((s) => s.id),
+          payload.snapshots.map((s) => s.id)
+        )
+      ) {
+        return response.conflict({
+          message: 'Secrets were pushed during the rotation. Please retry.',
+        })
       }
 
       const newKeyVersion = current + 1
@@ -245,7 +264,9 @@ export default class KeyringController {
       }
 
       if (lockedEnvironment) {
-        await EnvironmentKey.query({ client: trx }).where('environment_id', lockedEnvironment.id).delete()
+        await EnvironmentKey.query({ client: trx })
+          .where('environment_id', lockedEnvironment.id)
+          .delete()
       } else {
         await ProjectKey.query({ client: trx }).where('project_id', lockedProject.id).delete()
       }
@@ -253,7 +274,7 @@ export default class KeyringController {
         await saveUserKey(keyring, key.userId, key.encryptedKey, trx)
       }
 
-      const revokedTokens = Number((await keyringTokens(keyring, trx).delete())[0] ?? 0)
+      const revokedTokens = await deleteCount(keyringTokens(keyring, trx))
 
       if (lockedEnvironment) {
         lockedEnvironment.merge({ keyVersion: newKeyVersion, rotationRequired: false })

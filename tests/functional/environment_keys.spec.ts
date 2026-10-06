@@ -16,11 +16,13 @@ async function workspace() {
   const developer = await createUser(`ek-developer-${Math.random()}@example.com`)
   await grantRole(maintainer, 'maintainer', { team })
   await grantRole(developer, 'developer', { team })
-  const base = (environment: string) => `/api/projects/${project.id}/environments/${environment}/key`
+  const base = (environment: string) =>
+    `/api/projects/${project.id}/environments/${environment}/key`
   return { team, project, maintainer, developer, base }
 }
 
-const keysFor = (users: { id: string }[]) => users.map((u) => ({ userId: u.id, encryptedKey: `k-${u.id}` }))
+const keysFor = (users: { id: string }[]) =>
+  users.map((u) => ({ userId: u.id, encryptedKey: `k-${u.id}` }))
 
 const token = async (projectId: string, environment: string) =>
   ProjectToken.create({
@@ -36,11 +38,19 @@ test.group('Environment keys', () => {
   test('an inherited environment serves the project key', async ({ client, assert }) => {
     const { project, maintainer, base } = await workspace()
     await Environment.create({ projectId: project.id, name: 'development', protected: false })
-    await ProjectKey.create({ projectId: project.id, userId: maintainer.id, encryptedKey: 'project-key' })
+    await ProjectKey.create({
+      projectId: project.id,
+      userId: maintainer.id,
+      encryptedKey: 'project-key',
+    })
 
     const response = await client.get(base('development')).loginAs(maintainer)
     response.assertStatus(200)
-    assert.include(response.body(), { scope: 'project', encryptedKey: 'project-key', keyVersion: 1 })
+    assert.include(response.body(), {
+      scope: 'project',
+      encryptedKey: 'project-key',
+      keyVersion: 1,
+    })
   })
 
   test('a developer initializes a new unprotected environment, not a protected one', async ({
@@ -61,12 +71,19 @@ test.group('Environment keys', () => {
       .loginAs(developer)
       .json({ expectedKeyVersion: 0, keys: keysFor([maintainer, developer]), snapshots: [] })
     init.assertStatus(200)
-    const qa = await Environment.query().where('project_id', project.id).where('name', 'qa').firstOrFail()
+    const qa = await Environment.query()
+      .where('project_id', project.id)
+      .where('name', 'qa')
+      .firstOrFail()
     assert.equal(qa.keyVersion, 1)
 
     const mine = await client.get(base('qa')).loginAs(developer)
     mine.assertStatus(200)
-    assert.include(mine.body(), { scope: 'environment', encryptedKey: `k-${developer.id}`, keyVersion: 1 })
+    assert.include(mine.body(), {
+      scope: 'environment',
+      encryptedKey: `k-${developer.id}`,
+      keyVersion: 1,
+    })
 
     const production = await client
       .post(`${base('production')}/rotate`)
@@ -148,7 +165,12 @@ test.group('Environment keys', () => {
     const { team, project, base } = await workspace()
     const viewer = await createUser(`ek-viewer-${Math.random()}@example.com`)
     await grantRole(viewer, 'viewer', { team })
-    await Environment.create({ projectId: project.id, name: 'production', protected: true, keyVersion: 1 })
+    await Environment.create({
+      projectId: project.id,
+      name: 'production',
+      protected: true,
+      keyVersion: 1,
+    })
 
     const response = await client.get(base('production')).loginAs(viewer)
     response.assertStatus(403)

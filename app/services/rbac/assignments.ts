@@ -100,7 +100,9 @@ const sampleEnvironments = (grant: Grant): EnvironmentRef[] => {
   const scope = grant.environments ?? { type: 'all' }
   if (scope.type === 'list') return scope.names.map((name) => ({ name, protected: true }))
   const development = { name: 'development', protected: false }
-  return scope.type === 'all' ? [{ name: 'production', protected: true }, development] : [development]
+  return scope.type === 'all'
+    ? [{ name: 'production', protected: true }, development]
+    : [development]
 }
 
 async function assertCanGrant(actor: User, targetUserId: string, role: Role, scope: Scope) {

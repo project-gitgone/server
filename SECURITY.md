@@ -1,20 +1,8 @@
-# Security Policy
+# Security policy
 
-## Supported Versions
+Report a vulnerability privately through GitHub: **Security → Report a vulnerability** on
+https://github.com/project-gitgone/server. Please do not open a public issue.
 
-Currently, only the latest version of GitGone is supported for security updates.
+You will get an answer within a week. Fixes are published as patch releases, with a security advisory.
 
-| Version | Supported          |
-| ------- | ------------------ |
-| latest  | :white_check_mark: |
-
-## Reporting a Vulnerability
-
-We take security seriously. If you discover a security vulnerability within GitGone, please do NOT open a public issue. Instead, please report it by sending an email to security@gitgone.io (or the maintainer's email).
-
-Please include:
-- A description of the vulnerability.
-- Steps to reproduce the issue.
-- Potential impact.
-
-We will acknowledge your report within 48 hours and provide a timeline for a fix.
+Supported: the latest release.

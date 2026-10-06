@@ -18,7 +18,9 @@ test.group('Environments model', () => {
     assert.isNull(dev.retention)
   })
 
-  test('environmentRef uses the stored flag, or the default for unknown names', async ({ assert }) => {
+  test('environmentRef uses the stored flag, or the default for unknown names', async ({
+    assert,
+  }) => {
     const team = await Team.create({ name: 'Ref team' })
     const project = await Project.create({ name: 'Ref project', teamId: team.id })
     const live = await ensureEnvironment(project.id, 'live')

@@ -16,10 +16,21 @@ test.group('Environments API', () => {
       .loginAs(maintainer)
       .json({ name: 'live', protected: true, retention: 10 })
     created.assertStatus(201)
-    const duplicate = await client.post(`/api/projects/${project.id}/environments`).loginAs(maintainer).json({ name: 'live' })
+    const duplicate = await client
+      .post(`/api/projects/${project.id}/environments`)
+      .loginAs(maintainer)
+      .json({ name: 'live' })
     duplicate.assertStatus(409)
 
-    await SecretSnapshot.create({ projectId: project.id, environment: 'live', version: 1, ciphertext: 'c', iv: 'i', authTag: 't', createdBy: maintainer.id })
+    await SecretSnapshot.create({
+      projectId: project.id,
+      environment: 'live',
+      version: 1,
+      ciphertext: 'c',
+      iv: 'i',
+      authTag: 't',
+      createdBy: maintainer.id,
+    })
     const listed = await client.get(`/api/projects/${project.id}/environments`).loginAs(maintainer)
     listed.assertStatus(200)
     const live = listed.body().find((e: any) => e.name === 'live')
@@ -42,7 +53,10 @@ test.group('Environments API', () => {
 
     const listed = await client.get(`/api/projects/${project.id}/environments`).loginAs(dev)
     listed.assertStatus(200)
-    const created = await client.post(`/api/projects/${project.id}/environments`).loginAs(dev).json({ name: 'qa' })
+    const created = await client
+      .post(`/api/projects/${project.id}/environments`)
+      .loginAs(dev)
+      .json({ name: 'qa' })
     created.assertStatus(403)
   })
 })

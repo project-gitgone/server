@@ -13,14 +13,25 @@ test.group('Snapshot retention', () => {
     const project = await Project.create({ name: 'Retention project', teamId: team.id })
     const maintainer = await createUser('retention@example.com')
     await grantRole(maintainer, 'maintainer', { team })
-    await Environment.create({ projectId: project.id, name: 'development', protected: false, retention: 2 })
+    await Environment.create({
+      projectId: project.id,
+      name: 'development',
+      protected: false,
+      retention: 2,
+    })
 
     for (let i = 0; i < 4; i++) {
-      const response = await client.post('/api/secrets').loginAs(maintainer).json({ projectId: project.id, environment: 'development', encryptedData })
+      const response = await client
+        .post('/api/secrets')
+        .loginAs(maintainer)
+        .json({ projectId: project.id, environment: 'development', encryptedData })
       response.assertStatus(201)
     }
     const versions = await SecretSnapshot.query().where('project_id', project.id).orderBy('version')
-    assert.deepEqual(versions.map((s) => s.version), [3, 4])
+    assert.deepEqual(
+      versions.map((s) => s.version),
+      [3, 4]
+    )
   })
 
   test('no retention keeps everything', async ({ client, assert }) => {
@@ -30,7 +41,10 @@ test.group('Snapshot retention', () => {
     await grantRole(maintainer, 'maintainer', { team })
 
     for (let i = 0; i < 3; i++) {
-      const response = await client.post('/api/secrets').loginAs(maintainer).json({ projectId: project.id, environment: 'development', encryptedData })
+      const response = await client
+        .post('/api/secrets')
+        .loginAs(maintainer)
+        .json({ projectId: project.id, environment: 'development', encryptedData })
       response.assertStatus(201)
     }
     assert.lengthOf(await SecretSnapshot.query().where('project_id', project.id), 3)

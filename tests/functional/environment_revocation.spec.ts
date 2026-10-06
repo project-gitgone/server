@@ -18,18 +18,15 @@ test.group('Environment keys: push and revocation', () => {
     await Environment.create({ projectId: project.id, name: 'qa', protected: false, keyVersion: 3 })
 
     const push = (keyVersion: number) =>
-      client
-        .post('/api/secrets')
-        .loginAs(maintainer)
-.json({
-          projectId: project.id,
-          environment: 'qa',
-          cryptoVersion: 2,
-          version: 1,
-          keyVersion,
-          keyScope: 'environment',
-          encryptedData,
-        })
+      client.post('/api/secrets').loginAs(maintainer).json({
+        projectId: project.id,
+        environment: 'qa',
+        cryptoVersion: 2,
+        version: 1,
+        keyVersion,
+        keyScope: 'environment',
+        encryptedData,
+      })
     const stale = await push(1)
     stale.assertStatus(409)
     const fresh = await push(3)
@@ -54,7 +51,11 @@ test.group('Environment keys: push and revocation', () => {
       protected: true,
       keyVersion: 1,
     })
-    await EnvironmentKey.create({ environmentId: production.id, userId: developer.id, encryptedKey: 'k' })
+    await EnvironmentKey.create({
+      environmentId: production.id,
+      userId: developer.id,
+      encryptedKey: 'k',
+    })
     await ProjectKey.create({ projectId: project.id, userId: developer.id, encryptedKey: 'pk' })
 
     const response = await client

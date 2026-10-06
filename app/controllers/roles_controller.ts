@@ -22,7 +22,9 @@ async function projectsUsing(role: Role) {
   const assignments = await RoleAssignment.query().where('role_id', role.id)
   const ids = (type: 'team' | 'project') =>
     assignments.filter((a) => a.scopeType === type).map((a) => a.scopeId as string)
-  return Project.query().where((q) => q.whereIn('team_id', ids('team')).orWhereIn('id', ids('project')))
+  return Project.query().where((q) =>
+    q.whereIn('team_id', ids('team')).orWhereIn('id', ids('project'))
+  )
 }
 
 export default class RolesController {

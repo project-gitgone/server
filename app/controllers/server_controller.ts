@@ -8,8 +8,12 @@ import { DateTime } from 'luxon'
 import { initAdminValidator } from '#validators/server'
 import { defaultRoleId } from '#services/rbac/default_roles'
 import { setRole } from '#services/rbac/assignments'
+import { instanceHealth } from '#services/instance_health'
+import RoleAssignment from '#models/role_assignment'
+import env from '#start/env'
 
-const packageVersion = JSON.parse(readFileSync(app.makePath('package.json'), 'utf8')).version as string
+const packageVersion = JSON.parse(readFileSync(app.makePath('package.json'), 'utf8'))
+  .version as string
 
 export default class ServerController {
   async capabilities({ response }: HttpContext) {
@@ -23,6 +27,34 @@ export default class ServerController {
         ...(cloudConfig() ? ['cloud'] : []),
         ...(cloudLoginConfig() ? ['cloud-login'] : []),
       ],
+    })
+  }
+
+  async welcome({ request, response, view }: HttpContext) {
+    const instanceName = env.get('INSTANCE_NAME') || 'default'
+    if (
+      request.accepts(['html', 'json']) === 'json' ||
+      request.header('accept')?.includes('json')
+    ) {
+      return response.ok({ status: 'ok', instance: instanceName })
+    }
+    if (env.get('STATUS_PAGE') === false) return response.notFound()
+
+    const health = await instanceHealth()
+    const hasAdmin =
+      health.databaseLatency !== null &&
+      !!(await RoleAssignment.query()
+        .where('role_id', defaultRoleId('owner'))
+        .whereHas('user', (user) => user.whereNull('deleted_at'))
+        .first())
+    const healthy = health.databaseLatency !== null && health.pendingMigrations === 0
+
+    return view.render('welcome', {
+      status: !healthy ? 'degraded' : hasAdmin ? 'ok' : 'setup',
+      hasAdmin,
+      version: packageVersion,
+      serverUrl: env.get('APP_URL') || `${request.protocol()}://${request.host()}`,
+      cloudLogin: !!cloudLoginConfig(),
     })
   }
 

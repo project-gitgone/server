@@ -33,7 +33,9 @@ export class CloudGuard implements GuardContract<User> {
   constructor(private ctx: HttpContext) {}
 
   #unauthorized(): never {
-    throw new errors.E_UNAUTHORIZED_ACCESS('Unauthorized access', { guardDriverName: this.driverName })
+    throw new errors.E_UNAUTHORIZED_ACCESS('Unauthorized access', {
+      guardDriverName: this.driverName,
+    })
   }
 
   async authenticate() {

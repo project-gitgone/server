@@ -38,7 +38,9 @@ export async function completeCloudLogin(profile: CloudProfile) {
     throw new CloudLoginDeniedError('Your cloud account has no email address')
   }
   if (!config || profile.organization !== config.instanceId || !profile.role) {
-    throw new CloudLoginDeniedError('You are not a member of the organization that owns this instance')
+    throw new CloudLoginDeniedError(
+      'You are not a member of the organization that owns this instance'
+    )
   }
 
   try {

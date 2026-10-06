@@ -28,7 +28,9 @@ test.group('RBAC resolution', () => {
     assert.isTrue(allows(user, 'env.write', { project, environment: env('development') }))
     assert.isFalse(allows(user, 'env.write', { project, environment: env('production') }))
     assert.isTrue(allows(user, 'env.read', { project, environment: env('production') }))
-    assert.isFalse(allows(user, 'env.read', { project: otherProject, environment: env('development') }))
+    assert.isFalse(
+      allows(user, 'env.read', { project: otherProject, environment: env('development') })
+    )
   })
 
   test('env permissions need an environment, ANY_ENVIRONMENT matches any grant', ({ assert }) => {
@@ -74,6 +76,8 @@ test.group('RBAC resolution', () => {
         grants: [{ permission: 'env.write', environments: { type: 'list', names: ['Staging'] } }],
       },
     ]
-    assert.isTrue(allows(user, 'env.write', { project, environment: { name: 'staging', protected: false } }))
+    assert.isTrue(
+      allows(user, 'env.write', { project, environment: { name: 'staging', protected: false } })
+    )
   })
 })

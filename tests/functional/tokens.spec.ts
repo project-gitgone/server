@@ -39,7 +39,10 @@ test.group('Project Tokens', (group) => {
     env.set('ALLOW_LEGACY_TOKENS', true)
   })
 
-  test('create a v2 token from a verifier and fetch secrets with it', async ({ client, assert }) => {
+  test('create a v2 token from a verifier and fetch secrets with it', async ({
+    client,
+    assert,
+  }) => {
     const { owner, project } = await setupProject()
 
     const createResponse = await client

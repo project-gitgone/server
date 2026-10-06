@@ -81,7 +81,9 @@ export default class AuthController {
 
     return response.ok({
       user: user.serialize(),
-      instanceRole: instance ? { id: instance.role.id, key: instance.role.key, name: instance.role.name } : null,
+      instanceRole: instance
+        ? { id: instance.role.id, key: instance.role.key, name: instance.role.name }
+        : null,
       permissions: [...new Set((instance?.role.effectiveGrants ?? []).map((g) => g.permission))],
       teams: teams.map((team) => {
         const role = teamAssignments.find((a) => a.scopeId === team.id)!.role
@@ -130,7 +132,9 @@ export default class AuthController {
     const user = auth.use('api').getUserOrFail()
 
     if (user.cryptoVersion !== 2) {
-      return response.conflict({ message: 'Log in again with an up-to-date CLI to upgrade your account first' })
+      return response.conflict({
+        message: 'Log in again with an up-to-date CLI to upgrade your account first',
+      })
     }
 
     const payload = await request.validateUsing(changePasswordValidator)

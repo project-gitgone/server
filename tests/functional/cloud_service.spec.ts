@@ -26,8 +26,17 @@ test.group('Cloud membership sync', (group) => {
     const project = await Project.create({ name: 'Synced project', teamId: team.id })
     const user = await createUser('synced@example.com')
     await grantRole(user, 'developer', { team })
-    await UserIdentity.create({ provider: 'gitgone-cloud', subject: 'cloud_member', userId: user.id })
-    const qa = await Environment.create({ projectId: project.id, name: 'qa', protected: false, keyVersion: 1 })
+    await UserIdentity.create({
+      provider: 'gitgone-cloud',
+      subject: 'cloud_member',
+      userId: user.id,
+    })
+    const qa = await Environment.create({
+      projectId: project.id,
+      name: 'qa',
+      protected: false,
+      keyVersion: 1,
+    })
     await EnvironmentKey.create({ environmentId: qa.id, userId: user.id, encryptedKey: 'k' })
     await User.accessTokens.create(user)
 
@@ -42,7 +51,11 @@ test.group('Cloud membership sync', (group) => {
     await qa.refresh()
     assert.isTrue(qa.rotationRequired)
     const event = await AuditEvent.query().where('action', 'users.delete').firstOrFail()
-    assert.include(event.serialize(), { actorType: 'token', actorId: 'cloud:service', actorLabel: 'GitGone Cloud' })
+    assert.include(event.serialize(), {
+      actorType: 'token',
+      actorId: 'cloud:service',
+      actorLabel: 'GitGone Cloud',
+    })
 
     const enabled = await client
       .post('/api/manage/v1/service/identities/cloud_member/enable')
@@ -55,12 +68,21 @@ test.group('Cloud membership sync', (group) => {
   test('only a service token with the membership.sync scope may sync', async ({ client }) => {
     await enableCloud()
     const user = await createUser('sync-guard@example.com')
-    await UserIdentity.create({ provider: 'gitgone-cloud', subject: 'cloud_guarded', userId: user.id })
+    await UserIdentity.create({
+      provider: 'gitgone-cloud',
+      subject: 'cloud_guarded',
+      userId: user.id,
+    })
     const url = '/api/manage/v1/service/identities/cloud_guarded/disable'
 
     const noScope = await client.post(url).header('Authorization', service(''))
     noScope.assertStatus(403)
-    const userToken = await client.post(url).header('Authorization', `Bearer ${signCloudToken({ sub: 'cloud_guarded', scope: 'membership.sync' })}`)
+    const userToken = await client
+      .post(url)
+      .header(
+        'Authorization',
+        `Bearer ${signCloudToken({ sub: 'cloud_guarded', scope: 'membership.sync' })}`
+      )
     userToken.assertStatus(403)
     const unknown = await client
       .post('/api/manage/v1/service/identities/cloud_nobody/disable')
@@ -82,14 +104,22 @@ test.group('Cloud membership sync', (group) => {
     await enableCloud()
     const owner = await createUser('only-owner@example.com')
     await grantRole(owner, 'owner')
-    await UserIdentity.create({ provider: 'gitgone-cloud', subject: 'cloud_owner', userId: owner.id })
+    await UserIdentity.create({
+      provider: 'gitgone-cloud',
+      subject: 'cloud_owner',
+      userId: owner.id,
+    })
     const refused = await client
       .post('/api/manage/v1/service/identities/cloud_owner/disable')
       .header('Authorization', service())
     refused.assertStatus(422)
 
     const banned = await createUser('banned@example.com')
-    await UserIdentity.create({ provider: 'gitgone-cloud', subject: 'cloud_banned', userId: banned.id })
+    await UserIdentity.create({
+      provider: 'gitgone-cloud',
+      subject: 'cloud_banned',
+      userId: banned.id,
+    })
     banned.deletedAt = DateTime.now()
     await banned.save()
     const restored = await client
@@ -106,13 +136,23 @@ test.group('Cloud membership sync', (group) => {
   }) => {
     await enableCloud()
     const url = '/api/manage/v1/service/identities/cloud_console/link'
-    const body = { email: 'console@example.com', name: 'Console', emailVerified: true, role: 'member' }
+    const body = {
+      email: 'console@example.com',
+      name: 'Console',
+      emailVerified: true,
+      role: 'member',
+    }
 
     const created = await client.post(url).header('Authorization', service()).json(body)
     created.assertStatus(200)
     const again = await client.post(url).header('Authorization', service()).json(body)
     assert.equal(again.body().userId, created.body().userId)
-    assert.lengthOf(await AuditEvent.query().where('action', 'users.create').where('target_id', created.body().userId), 1)
+    assert.lengthOf(
+      await AuditEvent.query()
+        .where('action', 'users.create')
+        .where('target_id', created.body().userId),
+      1
+    )
 
     const parallel = await Promise.all(
       ['a', 'b', 'c'].map(() =>

@@ -1,7 +1,12 @@
 import type { EnvironmentRef } from '#services/rbac/environments'
 import type User from '#models/user'
 import RoleAssignment from '#models/role_assignment'
-import { PERMISSIONS, permissionLevel, type Grant, type Permission } from '#services/rbac/permissions'
+import {
+  PERMISSIONS,
+  permissionLevel,
+  type Grant,
+  type Permission,
+} from '#services/rbac/permissions'
 import {
   allows,
   ANY_ENVIRONMENT,

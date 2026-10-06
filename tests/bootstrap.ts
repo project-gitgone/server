@@ -10,13 +10,11 @@ export const plugins: Config['plugins'] = [
   assert(),
   apiClient(),
   pluginAdonisJS(app),
-  authApiClient(app)
+  authApiClient(app),
 ]
 
 export const runnerHooks: Required<Pick<Config, 'setup' | 'teardown'>> = {
-  setup: [
-    () => testUtils.db().migrate(),
-  ],
+  setup: [() => testUtils.db().migrate()],
   teardown: [],
 }
 

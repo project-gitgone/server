@@ -61,8 +61,7 @@ async function signingKey(url: string, kid: string) {
   const missing = !current?.keys.has(kid)
   if (!current || ((stale || missing) && Date.now() - lastAttempt > JWKS_REFRESH_MIN_MS)) {
     await refreshKeys(url)
-  }
-  else if (stale && inFlight) await inFlight
+  } else if (stale && inFlight) await inFlight
   const key = keySet?.url === url ? keySet.keys.get(kid) : undefined
   if (!key) throw new CloudTokenError('Unknown signing key')
   return key

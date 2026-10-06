@@ -18,7 +18,11 @@ export default class MembersController {
     const target = await User.query().where('id', params.id).whereNull('deleted_at').firstOrFail()
     const { roleId } = await request.validateUsing(assignRoleValidator)
     await setRole(target.id, roleId, { type: 'instance' }, auth.getUserOrFail())
-    await auditAccess({ auth, request }, 'access.grant', { userId: target.id, scope: { type: 'instance' }, roleId })
+    await auditAccess({ auth, request }, 'access.grant', {
+      userId: target.id,
+      scope: { type: 'instance' },
+      roleId,
+    })
     return response.ok({ userId: target.id, roleId })
   }
 

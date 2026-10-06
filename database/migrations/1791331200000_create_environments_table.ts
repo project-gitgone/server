@@ -6,7 +6,12 @@ export default class extends BaseSchema {
   async up() {
     this.schema.createTable('environments', (table) => {
       table.string('id').primary()
-      table.string('project_id').notNullable().references('id').inTable('projects').onDelete('CASCADE')
+      table
+        .string('project_id')
+        .notNullable()
+        .references('id')
+        .inTable('projects')
+        .onDelete('CASCADE')
       table.string('name').notNullable()
       table.boolean('protected').notNullable().defaultTo(false)
       table.integer('retention').nullable()

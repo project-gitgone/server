@@ -6,9 +6,9 @@ export default class extends BaseSchema {
   async up() {
     this.schema.alterTable(this.tableName, (table) => {
       table.text('encrypted_private_key').nullable()
-      
+
       table.string('key_salt').nullable()
-      
+
       table.string('key_encryption_algo').nullable()
     })
   }

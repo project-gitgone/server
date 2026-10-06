@@ -264,9 +264,7 @@ test.group('Project key rotation', () => {
     assert.lengthOf(exported.body().snapshots, 1)
     assert.equal(exported.body().snapshots[0].tag, 't')
 
-    const recipients = await client
-      .get(`/api/keys/${ctx.project.id}/recipients`)
-      .loginAs(ctx.owner)
+    const recipients = await client.get(`/api/keys/${ctx.project.id}/recipients`).loginAs(ctx.owner)
     recipients.assertStatus(200)
     assert.sameMembers(
       recipients.body().map((u: any) => u.id),
@@ -317,7 +315,9 @@ test.group('Team member removal', () => {
       .loginAs(ctx.owner)
 
     response.assertStatus(422)
-    response.assertBodyContains({ message: 'The team must keep at least one member able to manage it' })
+    response.assertBodyContains({
+      message: 'The team must keep at least one member able to manage it',
+    })
   })
 
   test('members cannot remove other members', async ({ client }) => {

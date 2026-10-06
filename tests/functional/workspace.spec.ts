@@ -18,10 +18,7 @@ test.group('Workspace', () => {
 
     await grantRole(user, 'member')
 
-    const response = await client
-      .post('/api/teams')
-      .loginAs(user)
-      .json({ name: 'My New Team' })
+    const response = await client.post('/api/teams').loginAs(user).json({ name: 'My New Team' })
 
     response.assertStatus(201)
     response.assertBodyContains({ name: 'My New Team' })

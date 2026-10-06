@@ -90,15 +90,12 @@ test.group('Accounts v2 - upgrade', () => {
     const user = await createV1User('upgrade@example.com')
     await User.accessTokens.create(user)
 
-    const response = await client
-      .post('/api/auth/upgrade')
-      .loginAs(user)
-      .json({
-        password: 'password123',
-        authKey: AUTH_KEY,
-        kdf: KDF,
-        encryptedPrivateKey: 'v2_vault',
-      })
+    const response = await client.post('/api/auth/upgrade').loginAs(user).json({
+      password: 'password123',
+      authKey: AUTH_KEY,
+      kdf: KDF,
+      encryptedPrivateKey: 'v2_vault',
+    })
 
     response.assertStatus(200)
     response.assertBodyContains({ user: { cryptoVersion: 2, encryptedPrivateKey: 'v2_vault' } })
@@ -122,15 +119,12 @@ test.group('Accounts v2 - upgrade', () => {
   test('upgrade requires the current password', async ({ client, assert }) => {
     const user = await createV1User('upgrade_wrong@example.com')
 
-    const response = await client
-      .post('/api/auth/upgrade')
-      .loginAs(user)
-      .json({
-        password: 'not-the-password',
-        authKey: AUTH_KEY,
-        kdf: KDF,
-        encryptedPrivateKey: 'v2_vault',
-      })
+    const response = await client.post('/api/auth/upgrade').loginAs(user).json({
+      password: 'not-the-password',
+      authKey: AUTH_KEY,
+      kdf: KDF,
+      encryptedPrivateKey: 'v2_vault',
+    })
 
     response.assertStatus(401)
     await user.refresh()
@@ -158,26 +152,20 @@ test.group('Accounts v2 - password change', () => {
   test('changes the password with the current authKey', async ({ client, assert }) => {
     const user = await createV2User('passwd@example.com')
 
-    const wrong = await client
-      .post('/api/auth/password')
-      .loginAs(user)
-      .json({
-        currentAuthKey: NEW_AUTH_KEY,
-        authKey: NEW_AUTH_KEY,
-        kdf: NEW_KDF,
-        encryptedPrivateKey: 'new_vault',
-      })
+    const wrong = await client.post('/api/auth/password').loginAs(user).json({
+      currentAuthKey: NEW_AUTH_KEY,
+      authKey: NEW_AUTH_KEY,
+      kdf: NEW_KDF,
+      encryptedPrivateKey: 'new_vault',
+    })
     wrong.assertStatus(401)
 
-    const response = await client
-      .post('/api/auth/password')
-      .loginAs(user)
-      .json({
-        currentAuthKey: AUTH_KEY,
-        authKey: NEW_AUTH_KEY,
-        kdf: NEW_KDF,
-        encryptedPrivateKey: 'new_vault',
-      })
+    const response = await client.post('/api/auth/password').loginAs(user).json({
+      currentAuthKey: AUTH_KEY,
+      authKey: NEW_AUTH_KEY,
+      kdf: NEW_KDF,
+      encryptedPrivateKey: 'new_vault',
+    })
     response.assertStatus(200)
 
     await user.refresh()
@@ -269,9 +257,7 @@ test.group('Accounts v2 - credentials reset', () => {
     const project = await Project.create({ name: 'Reset Project', teamId: team.id })
     await ProjectKey.create({ projectId: project.id, userId: user.id, encryptedKey: 'k' })
 
-    const response = await client
-      .post(`/api/users/${user.id}/reset-credentials`)
-      .loginAs(admin)
+    const response = await client.post(`/api/users/${user.id}/reset-credentials`).loginAs(admin)
 
     response.assertStatus(200)
     assert.isString(response.body().activationCode)
@@ -298,9 +284,7 @@ test.group('Accounts v2 - credentials reset', () => {
     const user = await createV2User('reset_user@example.com')
     const other = await createV2User('reset_other@example.com')
 
-    const response = await client
-      .post(`/api/users/${other.id}/reset-credentials`)
-      .loginAs(user)
+    const response = await client.post(`/api/users/${other.id}/reset-credentials`).loginAs(user)
 
     response.assertStatus(403)
   })
