@@ -1,5 +1,15 @@
 # @project-gitgone/server
 
+## 26.11.0
+
+### Minor Changes
+
+- [`c82698d`](https://github.com/project-gitgone/server/commit/c82698daef46bbe06d6cdd147bba5e289c050e5d) Thanks [@Asuniia](https://github.com/Asuniia)! - New `GET /api/projects/:id/timeline` endpoint: the versions of every environment of a project, newest first, with key rotations and environment creations, limited to the environments the user can read the history of. Rollback pushes now record the restored version (`rollbackOf`) on the new version.
+
+### Patch Changes
+
+- [`c82698d`](https://github.com/project-gitgone/server/commit/c82698daef46bbe06d6cdd147bba5e289c050e5d) Thanks [@Asuniia](https://github.com/Asuniia)! - GitGone Cloud can again reset an instance, reset its access (sessions, CI tokens, key rotation required) and revoke the sessions of a member whose authorization was removed: the management routes were missing from the released server. Cloud login errors are logged, and an unreachable cloud is reported as such to the CLI.
+
 ## 26.10.8
 
 ### Patch Changes
