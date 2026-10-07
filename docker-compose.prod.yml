@@ -43,7 +43,6 @@ services:
       - TOKEN_EXPIRES_IN=${TOKEN_EXPIRES_IN:-30 days}
       - ALLOW_LEGACY_TOKENS=${ALLOW_LEGACY_TOKENS:-true}
       - ALLOW_LEGACY_CLIENTS=${ALLOW_LEGACY_CLIENTS:-true}
-      - DB_ALLOW_MIGRATIONS_IN_PRODUCTION=${DB_ALLOW_MIGRATIONS_IN_PRODUCTION:-false}
     networks:
       - internal
       - traefik_default

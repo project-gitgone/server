@@ -31,5 +31,4 @@ export default await Env.create(new URL('../', import.meta.url), {
   CLOUD_INSTANCE_ID: Env.schema.string.optional(),
   CLOUD_CLIENT_ID: Env.schema.string.optional(),
   CLOUD_CLIENT_SECRET: Env.schema.string.optional(),
-  DB_ALLOW_MIGRATIONS_IN_PRODUCTION: Env.schema.boolean.optional(),
 })
