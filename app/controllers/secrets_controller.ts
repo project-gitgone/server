@@ -70,6 +70,12 @@ export default class SecretsController {
           .orderBy('version', 'desc')
           .first()
         const nextVersion = (lastSnapshot?.version || 0) + 1
+        const rollbackSource = payload.rollbackOf
+          ? await snapshotsOf(project.id, payload.environment)
+              .useTransaction(trx)
+              .where('id', payload.rollbackOf)
+              .first()
+          : null
 
         if (payload.cryptoVersion !== 2) {
           if (!env.get('ALLOW_LEGACY_CLIENTS', true)) {
@@ -117,6 +123,7 @@ export default class SecretsController {
             iv: payload.encryptedData.iv,
             authTag: payload.encryptedData.authTag,
             createdBy: user.id,
+            rollbackOf: rollbackSource?.version ?? null,
           },
           { client: trx }
         )

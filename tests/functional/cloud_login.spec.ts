@@ -100,6 +100,11 @@ test.group('Cloud login', (group) => {
     assert.isNull(await User.findBy('email', 'unverified@example.com'))
   })
 
+  test('a cloud instance refuses the password setup of a first admin', async ({ client }) => {
+    const response = await client.post('/api/setup/init-admin').json({})
+    response.assertStatus(403)
+  })
+
   test('a local account is linked only when the cloud email is verified', async ({ assert }) => {
     const local = await createUser('existing@example.com')
     await assert.rejects(() =>

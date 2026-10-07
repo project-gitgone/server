@@ -14,6 +14,7 @@ const RolesController = () => import('#controllers/roles_controller')
 const MembersController = () => import('#controllers/members_controller')
 const EnvironmentsController = () => import('#controllers/environments_controller')
 const AuditController = () => import('#controllers/audit_controller')
+const TimelineController = () => import('#controllers/timeline_controller')
 const CloudServiceController = () => import('#controllers/cloud_service_controller')
 
 router.get('/', [ServerController, 'welcome'])
@@ -62,6 +63,7 @@ function manageableRoutes() {
   router.put('/projects/:id/members', [MembersController, 'setProjectRole'])
   router.delete('/projects/:id/members/:userId', [MembersController, 'removeProjectRole'])
   router.get('/projects/:id/environments', [EnvironmentsController, 'index'])
+  router.get('/projects/:id/timeline', [TimelineController, 'show'])
   router.post('/projects/:id/environments', [EnvironmentsController, 'store'])
   router.patch('/projects/:id/environments/:environmentId', [EnvironmentsController, 'update'])
   router.get('/keys/:projectId/pending', [KeyringController, 'pending'])
@@ -105,9 +107,18 @@ router
     router.post('/identities/:subject/disable', [CloudServiceController, 'disable'])
     router.post('/identities/:subject/enable', [CloudServiceController, 'enable'])
     router.post('/identities/:subject/link', [CloudServiceController, 'link'])
+    router.post('/identities/:subject/sessions/revoke', [CloudServiceController, 'revokeSessions'])
   })
   .prefix('/api/manage/v1/service')
   .use([middleware.cloudOnly(), middleware.cloudService({ scope: 'membership.sync' })])
+
+router
+  .group(() => {
+    router.post('/instance/reset', [CloudServiceController, 'resetInstance'])
+    router.post('/instance/access/reset', [CloudServiceController, 'resetAccess'])
+  })
+  .prefix('/api/manage/v1/service')
+  .use([middleware.cloudOnly(), middleware.cloudService({ scope: 'instance.reset' })])
 
 router
   .group(() => manageableRoutes())

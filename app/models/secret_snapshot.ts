@@ -34,6 +34,9 @@ export default class SecretSnapshot extends BaseModel {
   declare keyVersion: number
 
   @column()
+  declare rollbackOf: number | null
+
+  @column()
   declare createdBy: string
 
   @column.dateTime({ autoCreate: true })
