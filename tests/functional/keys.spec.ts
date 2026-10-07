@@ -118,7 +118,7 @@ test.group('Project Keys', () => {
     response.assertStatus(404)
     response.assertBodyContains({
       message:
-        'The key has not been shared with you yet. Ask a maintainer to run "gitgone keys share".',
+        'The key has not been shared with you yet. Ask a maintainer to run "gitgone key share".',
     })
   })
 

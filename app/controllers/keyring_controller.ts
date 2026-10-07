@@ -89,7 +89,7 @@ export default class KeyringController {
     if (!key) {
       return response.notFound({
         message:
-          'The key has not been shared with you yet. Ask a maintainer to run "gitgone keys share".',
+          'The key has not been shared with you yet. Ask a maintainer to run "gitgone key share".',
       })
     }
 

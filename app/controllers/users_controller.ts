@@ -117,7 +117,7 @@ export default class UsersController {
     const user = await User.query().where('id', params.id).whereNull('deleted_at').firstOrFail()
 
     if (user.id === auth.getUserOrFail().id) {
-      return response.badRequest('Use `gitgone passwd` to change your own password.')
+      return response.badRequest('Use `gitgone account password` to change your own password.')
     }
     await assertCanActOn(auth.getUserOrFail(), user.id)
 
