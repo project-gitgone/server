@@ -1,6 +1,7 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto'
 import { Exception } from '@adonisjs/core/exceptions'
 import db from '@adonisjs/lucid/services/db'
+import type { TransactionClientContract } from '@adonisjs/lucid/types/database'
 import { DateTime } from 'luxon'
 import LoginCode from '#models/login_code'
 import RoleAssignment from '#models/role_assignment'
@@ -52,6 +53,24 @@ export async function completeCloudLogin(profile: CloudProfile) {
 }
 
 const UNIQUE_VIOLATION = '23505'
+const CLOUD_OWNER_ROLE = 'owner'
+
+async function promoteToOwner(userId: string, trx: TransactionClientContract) {
+  const assignment = await RoleAssignment.query({ client: trx })
+    .where('user_id', userId)
+    .where('scope_type', 'instance')
+    .first()
+  if (assignment?.roleId === defaultRoleId('owner')) return
+  if (assignment) {
+    assignment.roleId = defaultRoleId('owner')
+    await assignment.useTransaction(trx).save()
+    return
+  }
+  await RoleAssignment.create(
+    { userId, roleId: defaultRoleId('owner'), scopeType: 'instance', scopeId: null },
+    { client: trx }
+  )
+}
 
 function linkCloudProfile(profile: CloudProfile) {
   return db.transaction(async (trx) => {
@@ -68,7 +87,10 @@ function linkCloudProfile(profile: CloudProfile) {
     if (local?.deletedAt) {
       throw new CloudLoginDeniedError('This account is deactivated on this instance')
     }
-    if (identity) return local!
+    if (identity) {
+      if (profile.role === CLOUD_OWNER_ROLE) await promoteToOwner(local!.id, trx)
+      return local!
+    }
     if (!profile.emailVerified) {
       throw new CloudLoginDeniedError(EMAIL_NOT_VERIFIED)
     }
@@ -83,7 +105,9 @@ function linkCloudProfile(profile: CloudProfile) {
         },
         { client: trx }
       ))
-    if (!local) {
+    if (profile.role === CLOUD_OWNER_ROLE) {
+      await promoteToOwner(user.id, trx)
+    } else if (!local) {
       await RoleAssignment.create(
         { userId: user.id, roleId: defaultRoleId('member'), scopeType: 'instance', scopeId: null },
         { client: trx }

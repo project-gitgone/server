@@ -7,9 +7,8 @@ import User, { V2_KEY_ENCRYPTION_ALGO } from '#models/user'
 import { DateTime } from 'luxon'
 import { initAdminValidator } from '#validators/server'
 import { defaultRoleId } from '#services/rbac/default_roles'
-import { setRole } from '#services/rbac/assignments'
+import { hasActiveInstanceOwner, setRole } from '#services/rbac/assignments'
 import { instanceHealth } from '#services/instance_health'
-import RoleAssignment from '#models/role_assignment'
 import env from '#start/env'
 
 const packageVersion = JSON.parse(readFileSync(app.makePath('package.json'), 'utf8'))
@@ -41,12 +40,7 @@ export default class ServerController {
     if (env.get('STATUS_PAGE') === false) return response.notFound()
 
     const health = await instanceHealth()
-    const hasAdmin =
-      health.databaseLatency !== null &&
-      !!(await RoleAssignment.query()
-        .where('role_id', defaultRoleId('owner'))
-        .whereHas('user', (user) => user.whereNull('deleted_at'))
-        .first())
+    const hasAdmin = health.databaseLatency !== null && (await hasActiveInstanceOwner())
     const healthy = health.databaseLatency !== null && health.pendingMigrations === 0
 
     return view.render('welcome', {
@@ -59,23 +53,31 @@ export default class ServerController {
   }
 
   async health({ response }: HttpContext) {
-    const userCount = await User.query().count('* as total').first()
-    const initialized = userCount?.$extras.total > 0
-
     return response.ok({
       status: 'ok',
       timestamp: DateTime.now().toISO(),
-      initialized,
+      initialized: await hasActiveInstanceOwner(),
     })
   }
 
   async initAdmin({ request, auth, response }: HttpContext) {
-    const user = await User.first()
-    if (user) {
+    if (cloudLoginConfig()) {
+      return response.forbidden({
+        message:
+          'This instance is managed by GitGone Cloud: run "gitgone login" with your cloud account',
+      })
+    }
+    if (await hasActiveInstanceOwner()) {
       return response.forbidden({ message: 'Server is already initialized' })
     }
 
     const payload = await request.validateUsing(initAdminValidator)
+    const taken = await User.query()
+      .whereRaw('lower(email) = ?', [payload.email.toLowerCase()])
+      .first()
+    if (taken) {
+      return response.conflict({ message: 'An account already uses this email address' })
+    }
 
     const superAdmin = await User.create({
       email: payload.email,

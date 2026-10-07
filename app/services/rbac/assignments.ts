@@ -51,6 +51,14 @@ export function roleIdFromInput(
   )
 }
 
+export async function hasActiveInstanceOwner() {
+  return !!(await RoleAssignment.query()
+    .where('scope_type', 'instance')
+    .where('role_id', defaultRoleId('owner'))
+    .whereHas('user', (user) => user.whereNull('deleted_at'))
+    .first())
+}
+
 export async function isInstanceOwner(user: { id: string } | null | undefined) {
   if (!user) return false
   const assignment = await findAssignment(user.id, { type: 'instance' })

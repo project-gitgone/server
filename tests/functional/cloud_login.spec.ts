@@ -50,6 +50,43 @@ test.group('Cloud login', (group) => {
     assert.equal(role.roleId, 'role_member')
   })
 
+  test('the owner of the organization becomes owner of the instance', async ({ assert }) => {
+    const user = await completeCloudLogin(
+      profile({ subject: 'cloud_owner', email: 'owner@example.com', role: 'owner' })
+    )
+    const role = await RoleAssignment.query().where('user_id', user.id).firstOrFail()
+    assert.equal(role.roleId, 'role_owner')
+  })
+
+  test('a member who becomes owner in the cloud is promoted on the next login', async ({
+    assert,
+  }) => {
+    const user = await completeCloudLogin(
+      profile({ subject: 'cloud_promoted', email: 'promoted@example.com' })
+    )
+    await completeCloudLogin(
+      profile({ subject: 'cloud_promoted', email: 'promoted@example.com', role: 'owner' })
+    )
+    const roles = await RoleAssignment.query()
+      .where('user_id', user.id)
+      .where('scope_type', 'instance')
+    assert.deepEqual(
+      roles.map((role) => role.roleId),
+      ['role_owner']
+    )
+  })
+
+  test('an instance owner is never demoted by a cloud login', async ({ assert }) => {
+    const user = await completeCloudLogin(
+      profile({ subject: 'cloud_kept', email: 'kept@example.com', role: 'owner' })
+    )
+    await completeCloudLogin(
+      profile({ subject: 'cloud_kept', email: 'kept@example.com', role: 'admin' })
+    )
+    const role = await RoleAssignment.query().where('user_id', user.id).firstOrFail()
+    assert.equal(role.roleId, 'role_owner')
+  })
+
   test('an unverified cloud email neither creates nor links an account', async ({ assert }) => {
     await assert.rejects(() =>
       completeCloudLogin(
